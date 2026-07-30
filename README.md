@@ -23,7 +23,7 @@ git push
 
 ## עריכה
 
-עורכים את `src/template.html` ואז:
+עורכים את `template.html` ואז:
 
 ```bash
 python3 build.py
