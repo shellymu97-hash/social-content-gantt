@@ -1134,6 +1134,7 @@ function migrate(months){
 function load(){
   try{
     var raw=localStorage.getItem(KEY);
+    hadLocalPlan=!!raw;
     if(raw){
       var d=JSON.parse(raw);
       if(d&&d.months)state.months=migrate(d.months);
@@ -1151,7 +1152,12 @@ function saveLocal(){
     catch(e){toast("אין מקום לשמור — נסי להסיר כמה תמונות כבדות")}
   },250);
 }
-function save(){saveLocal();touched();schedulePush();}
+function save(){
+  saveLocal();
+  if(booting)return;   /* the default template is not something she typed */
+  touched();
+  schedulePush();
+}
 
 function newSlot(dateStr,type){
   return {id:uid(),date:dateStr,type:type||"carousel",topic:"",hook:"",status:"todo",
@@ -2071,6 +2077,8 @@ var SUPA_KEY="sb_publishable_ERLrJjXjCDDME9FjV410MQ_2aWJW_hH";
 var KKEY="shelly-content-sync-key",TKEY="shelly-content-touched";
 var syncKey="",syncStatus="off",pushTimer=null,pulling=false;
 var serverAt=0;          /* last server timestamp we know about */
+var hadLocalPlan=false;  /* did this browser hold a board before this load? */
+var booting=true;        /* seeding the first month must not look like an edit */
 var pollTimer=null,POLL_MS=45000;   /* safety net only — the socket does the real work */
 var pendingAdopt=null;   /* a pull that arrived while the editor was open */
 
@@ -2243,14 +2251,23 @@ function pullThenSync(){
   rpc("plan_pull",{p_key:syncKey}).then(function(rows){
     var row=rows&&rows[0];
     pulling=false;
-    if(row&&row.data&&row.data.months&&Date.parse(row.updated_at)>lastTouched()){
+    var serverHas=row&&row.data&&row.data.months;
+    if(serverHas&&(!hadLocalPlan||Date.parse(row.updated_at)>lastTouched())){
+      booting=false;
       adopt(row);setSync("ok");
       toast("התוכן נטען מהענן");
+    }else if(serverHas||hadLocalPlan){
+      booting=false;
+      pushNow();
     }else{
+      /* nothing anywhere yet — this really is a brand new board */
+      booting=false;
       pushNow();
     }
     startPolling();
-  }).catch(function(){pulling=false;setSync("err");startPolling()});
+  }).catch(function(){
+    pulling=false;booting=false;setSync("err");startPolling();
+  });
 }
 
 function syncLink(){
@@ -2362,7 +2379,7 @@ $("syncStop").onclick=function(){
    for hours. A tiny version file fetched with no-store settles who is stale;
    when the board is idle it refreshes itself, and when she is mid-edit it
    waits and offers a button instead of yanking the page away. */
-var BUILD="026f7e2d";
+var BUILD="f87c5418";
 function versionCheck(){
   if(!/^https?:/.test(location.protocol))return;
   fetch("version.json?t="+Date.now(),{cache:"no-store"})
@@ -2401,6 +2418,7 @@ if(window.matchMedia&&window.matchMedia("(max-width:700px)").matches){
   view="list";$("vList").setAttribute("aria-pressed","true");$("vCal").setAttribute("aria-pressed","false");
 }
 render();
+if(!SYNC_ON||!syncKey)booting=false;
 paintSync();
 if(SYNC_ON&&syncKey)pullThenSync();
 if(SYNC_ON&&freshDevice)$("onboard").hidden=false;
