@@ -2124,7 +2124,44 @@ function schedulePush(){
   clearTimeout(pushTimer);
   pushTimer=setTimeout(pushNow,600);
 }
+/* How much real work a snapshot holds. Used as a guard: an empty board must
+   never be allowed to bury a full one just because its clock ran later. */
+function contentSize(snap){
+  var n=0,k,a,i,s2;
+  for(k in snap.months){
+    a=(snap.months[k]&&snap.months[k].slots)||[];
+    for(i=0;i<a.length;i++){
+      s2=a[i];
+      if((s2.topic||"").trim()||(s2.hook||"").trim()||(s2.body||"").trim()||
+         (s2.caption||"").trim()||(s2.images||[]).length||
+         (s2.slides||[]).join("").trim())n++;
+    }
+  }
+  return n+((snap.ideas||[]).length);
+}
+
 function pushNow(){
+  if(!SYNC_ON||!syncKey)return;
+  /* Refuse to overwrite a populated cloud copy with an empty local one.
+     This is the failure that cost real content once: a tab holding nothing
+     kept asserting itself over the good copy on every sync. */
+  if(contentSize(snapshot())===0){
+    setSync("syncing");
+    rpc("plan_pull",{p_key:syncKey}).then(function(rows){
+      var row=rows&&rows[0];
+      if(row&&row.data&&row.data.months&&contentSize(row.data)>0){
+        adopt(row);setSync("ok");
+        toast("נטען הלוח מהענן");
+        return;
+      }
+      reallyPush();
+    }).catch(function(){setSync("err")});
+    return;
+  }
+  reallyPush();
+}
+
+function reallyPush(){
   if(!SYNC_ON||!syncKey)return;
   setSync("syncing");
   rpc("plan_push",{p_key:syncKey,p_data:snapshot()})
@@ -2379,7 +2416,7 @@ $("syncStop").onclick=function(){
    for hours. A tiny version file fetched with no-store settles who is stale;
    when the board is idle it refreshes itself, and when she is mid-edit it
    waits and offers a button instead of yanking the page away. */
-var BUILD="f87c5418";
+var BUILD="7c1de746";
 function versionCheck(){
   if(!/^https?:/.test(location.protocol))return;
   fetch("version.json?t="+Date.now(),{cache:"no-store"})
