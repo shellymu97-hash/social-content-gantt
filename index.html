@@ -2055,7 +2055,7 @@ var SUPA_KEY="sb_publishable_ERLrJjXjCDDME9FjV410MQ_2aWJW_hH";
 var KKEY="shelly-content-sync-key",TKEY="shelly-content-touched";
 var syncKey="",syncStatus="off",pushTimer=null,pulling=false;
 var serverAt=0;          /* last server timestamp we know about */
-var pollTimer=null,POLL_MS=20000;
+var pollTimer=null,POLL_MS=45000;   /* safety net only — the socket does the real work */
 var pendingAdopt=null;   /* a pull that arrived while the editor was open */
 
 function touched(){try{localStorage.setItem(TKEY,String(Date.now()))}catch(e){}}
@@ -2098,7 +2098,7 @@ function paintSync(){
 function schedulePush(){
   if(!SYNC_ON||!syncKey||pulling)return;
   clearTimeout(pushTimer);
-  pushTimer=setTimeout(pushNow,1500);
+  pushTimer=setTimeout(pushNow,600);
 }
 function pushNow(){
   if(!SYNC_ON||!syncKey)return;
@@ -2108,6 +2108,7 @@ function pushNow(){
       persistKey();
       serverAt=Date.parse(ts)||Date.now();
       setSync("ok");
+      rtNotify(serverAt);
     })
     .catch(function(){setSync("err")});
 }
@@ -2142,17 +2143,82 @@ function poll(){
     },function(){pulling=false});
   }).catch(function(){});
 }
+/* A websocket carries a "something changed" nudge between devices, so an edit
+   lands on the other screen in about a second instead of on the next poll.
+   The channel is named after a hash of the sync key — the key itself never
+   travels as an identifier — and the nudge carries no plan data, only a
+   timestamp. The actual content still comes over the authenticated RPC. */
+var rt=null,rtTopic="",rtBeat=null,rtRetry=0,rtJoined=false;
+
+function channelName(key){
+  if(!(window.crypto&&crypto.subtle&&crypto.subtle.digest))
+    return Promise.resolve("k"+String(key.length)+key.slice(0,6));
+  return crypto.subtle.digest("SHA-256",new TextEncoder().encode("plan:"+key))
+    .then(function(buf){
+      var b=new Uint8Array(buf),h="";
+      for(var i=0;i<12;i++)h+=("0"+b[i].toString(16)).slice(-2);
+      return "plan-"+h;
+    });
+}
+function rtSend(o){try{rt&&rt.readyState===1&&rt.send(JSON.stringify(o))}catch(e){}}
+function rtNotify(at){
+  if(!rtJoined)return;
+  rtSend({topic:rtTopic,event:"broadcast",
+          payload:{type:"broadcast",event:"changed",payload:{at:at||Date.now()}},ref:"n"});
+}
+function rtClose(){
+  if(rtBeat){clearInterval(rtBeat);rtBeat=null}
+  rtJoined=false;
+  if(rt){try{rt.onclose=null;rt.close()}catch(e){}rt=null}
+}
+function rtConnect(){
+  if(!SYNC_ON||!syncKey)return;
+  rtClose();
+  channelName(syncKey).then(function(name){
+    if(!syncKey)return;
+    rtTopic="realtime:"+name;
+    var url="wss://"+SUPA_URL.replace(/^https?:\/\//,"")+
+            "/realtime/v1/websocket?apikey="+encodeURIComponent(SUPA_KEY)+"&vsn=1.0.0";
+    try{rt=new WebSocket(url)}catch(e){return}
+    rt.onopen=function(){
+      rtRetry=0;
+      rtSend({topic:rtTopic,event:"phx_join",
+              payload:{config:{broadcast:{self:false}}},ref:"1"});
+      rtBeat=setInterval(function(){
+        rtSend({topic:"phoenix",event:"heartbeat",payload:{},ref:"hb"});
+      },25000);
+    };
+    rt.onmessage=function(ev){
+      var m;try{m=JSON.parse(ev.data)}catch(e){return}
+      if(m.event==="phx_reply"&&m.payload&&m.payload.status==="ok"&&m.topic===rtTopic){
+        rtJoined=true;return;
+      }
+      if(m.event==="broadcast"&&m.payload&&m.payload.event==="changed")poll();
+    };
+    rt.onclose=function(){
+      rtJoined=false;
+      if(rtBeat){clearInterval(rtBeat);rtBeat=null}
+      if(!syncKey)return;
+      rtRetry=Math.min(rtRetry+1,6);
+      setTimeout(rtConnect,Math.min(1000*Math.pow(2,rtRetry),30000));
+    };
+  });
+}
+
 function startPolling(){
   if(pollTimer)clearInterval(pollTimer);
   if(!SYNC_ON||!syncKey)return;
   pollTimer=setInterval(poll,POLL_MS);
+  rtConnect();
 }
 /* coming back to the tab is the moment a stale board is most obvious */
 document.addEventListener("visibilitychange",function(){
-  if(!document.hidden)poll();
+  if(document.hidden)return;
+  poll();
+  if(syncKey&&(!rt||rt.readyState>1))rtConnect();
 });
 window.addEventListener("focus",poll);
-window.addEventListener("online",function(){poll();schedulePush()});
+window.addEventListener("online",function(){poll();schedulePush();rtConnect()});
 /* server wins when it was written after our last local edit; otherwise we upload */
 function pullThenSync(){
   if(!SYNC_ON||!syncKey)return;
@@ -2237,7 +2303,7 @@ $("syncStart").onclick=function(){
   touched();
   setSync("syncing");
   rpc("plan_push",{p_key:syncKey,p_data:snapshot()}).then(function(ts){
-    persistKey();serverAt=Date.parse(ts)||Date.now();startPolling();
+    persistKey();serverAt=Date.parse(ts)||Date.now();startPolling();rtNotify(serverAt);
     setSync("ok");openSync();toast("הסנכרון הופעל");
   }).catch(function(){
     setSync("err");openSync();
