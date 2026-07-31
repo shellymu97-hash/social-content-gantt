@@ -617,6 +617,26 @@ input[type=date].inp{font-variant-numeric:tabular-nums;max-width:190px}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
 
 .syncbox{width:min(460px,100%);gap:14px}
+.vlist{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow:auto}
+.vrow{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-s);
+  background:var(--surface-2);font-size:13.5px;
+}
+.vrow .when{flex:1;min-width:0}
+.vrow .when b{display:block;font-weight:700;color:var(--ink)}
+.vrow .when span{font-size:11.5px;color:var(--muted)}
+.vrow .why{
+  font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:99px;
+  background:var(--s-todo-bg);color:var(--s-todo-fg);white-space:nowrap;
+}
+.vrow .why.shrink{background:#FBEDEA;color:#B0503F}
+.vrow button{
+  padding:6px 13px;border-radius:8px;border:1px solid var(--line);
+  font-size:13px;color:var(--ink-2);transition:.15s;flex:none;
+}
+.vrow button:hover{border-color:var(--brand);color:var(--brand-deep);background:var(--brand-tint)}
+.vlist .none{padding:18px;text-align:center;color:var(--muted);font-size:13px}
 .syncbox .grp{display:flex;flex-direction:column;gap:7px}
 .syncbox label{font-size:11.5px;font-weight:700;color:var(--muted);letter-spacing:.055em}
 .syncbox .small{margin:0;font-size:12.5px;color:var(--faint);line-height:1.55}
@@ -742,6 +762,10 @@ input[type=date].inp{font-variant-numeric:tabular-nums;max-width:190px}
           <button id="mSync" role="menuitem">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-7.4-3.9"/><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 7.4 3.9"/><path d="M20 3v5h-5"/><path d="M4 21v-5h5"/></svg>
             סנכרון בין מכשירים
+          </button>
+          <button id="mHistory" role="menuitem">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 2.6-6.4L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>
+            היסטוריית גרסאות
           </button>
           <button id="mExport" role="menuitem">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M4 19h16"/></svg>
@@ -901,6 +925,17 @@ input[type=date].inp{font-variant-numeric:tabular-nums;max-width:190px}
     <div class="syncsep">או</div>
     <button class="btn btn-ghost" id="obNew">התחלת לוח חדש מאפס</button>
     <p class="small">לוח חדש לא יראה את התוכן הקיים שלך.</p>
+  </div>
+</div>
+
+<div class="ask" id="hist" hidden role="dialog" aria-modal="true" aria-labelledby="histT">
+  <div class="askbox syncbox">
+    <h3 id="histT">היסטוריית גרסאות</h3>
+    <p class="small">הלוח נשמר בענן אוטומטית, ובנוסף נשמרות עד 20 תמונות מצב — גם לפני כל שינוי שמוחק תוכן. אפשר לחזור לכל אחת מהן.</p>
+    <div class="vlist" id="histList"></div>
+    <div class="askacts">
+      <button class="btn btn-ghost" id="histClose">סגירה</button>
+    </div>
   </div>
 </div>
 
@@ -2055,6 +2090,7 @@ $("mPrint").onclick=function(){
 document.addEventListener("keydown",function(e){
   if(e.key==="Escape"){
     if(!$("onboard").hidden)return;
+    if(!$("hist").hidden){$("hist").hidden=true;return}
     if(!$("sync").hidden){closeSync();return}
     if(!$("ask").hidden){closeAsk(false);return}
     if(menu.classList.contains("on")){menu.classList.remove("on");return}
@@ -2363,6 +2399,66 @@ $("obNew").onclick=function(){
   });
 };
 
+function whenText(iso){
+  var d=new Date(iso),now=new Date();
+  var sameDay=d.toDateString()===now.toDateString();
+  var t=("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2);
+  if(sameDay)return "היום "+t;
+  var y=new Date(now.getTime()-864e5);
+  if(d.toDateString()===y.toDateString())return "אתמול "+t;
+  return d.getDate()+" ב"+MONTHS[d.getMonth()]+" "+t;
+}
+function openHistory(){
+  var w=$("histList");
+  w.textContent="";
+  var loading=el("div","none");loading.textContent="טוען…";w.appendChild(loading);
+  $("hist").hidden=false;
+  rpc("plan_versions",{p_key:syncKey}).then(function(rows){
+    w.textContent="";
+    if(!rows||!rows.length){
+      var n=el("div","none");
+      n.textContent="עוד אין תמונות מצב. הראשונה תישמר בשינוי הבא.";
+      w.appendChild(n);return;
+    }
+    rows.forEach(function(v){
+      var r=el("div","vrow");
+      var when=el("div","when");
+      var b=el("b");b.textContent=whenText(v.created_at);
+      var sp=el("span");sp.textContent=v.filled+" פריטי תוכן";
+      when.appendChild(b);when.appendChild(sp);
+      var why=el("span","why"+(v.reason==="before-shrink"?" shrink":""));
+      why.textContent=v.reason==="before-shrink"?"לפני מחיקה":"שמירה תקופתית";
+      var go=el("button");go.textContent="שחזור";
+      go.onclick=function(){
+        ask({title:"לחזור לגרסה מ"+whenText(v.created_at)+"?",
+             body:"הלוח הנוכחי יוחלף. הוא עצמו יישמר בהיסטוריה, אז אפשר יהיה לחזור גם ממנו.",
+             ok:"שחזור"},function(){
+          setSync("syncing");
+          rpc("plan_restore",{p_key:syncKey,p_id:v.id}).then(function(){
+            return rpc("plan_pull",{p_key:syncKey});
+          }).then(function(rows2){
+            var row=rows2&&rows2[0];
+            if(row&&row.data&&row.data.months){adopt(row);setSync("ok");rtNotify(serverAt)}
+            $("hist").hidden=true;
+            toast("הלוח שוחזר");
+          }).catch(function(){setSync("err");toast("השחזור נכשל — נסי שוב")});
+        });
+      };
+      r.appendChild(when);r.appendChild(why);r.appendChild(go);
+      w.appendChild(r);
+    });
+  }).catch(function(){
+    w.textContent="";
+    var n=el("div","none");n.textContent="לא הצלחתי לטעון את ההיסטוריה.";w.appendChild(n);
+  });
+}
+$("mHistory").onclick=function(){
+  if(!SYNC_ON||!syncKey){toast("היסטוריה זמינה כשהסנכרון פעיל");return}
+  openHistory();
+};
+$("histClose").onclick=function(){$("hist").hidden=true};
+$("hist").onclick=function(e){if(e.target===$("hist"))$("hist").hidden=true};
+
 $("mSync").onclick=openSync;
 $("synPill").onclick=openSync;
 $("syncClose").onclick=closeSync;
@@ -2416,7 +2512,7 @@ $("syncStop").onclick=function(){
    for hours. A tiny version file fetched with no-store settles who is stale;
    when the board is idle it refreshes itself, and when she is mid-edit it
    waits and offers a button instead of yanking the page away. */
-var BUILD="7c1de746";
+var BUILD="9a6ff1a0";
 function versionCheck(){
   if(!/^https?:/.test(location.protocol))return;
   fetch("version.json?t="+Date.now(),{cache:"no-store"})
