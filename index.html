@@ -575,6 +575,17 @@ input[type=date].inp{font-variant-numeric:tabular-nums;max-width:190px}
 .btn-primary.danger{background:#C0392B}
 .btn-primary.danger:hover{background:#A5301F}
 
+.update{
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  padding:9px 22px;background:var(--brand-tint);border-bottom:1px solid #BEE3E1;
+  font-size:13.5px;color:var(--brand-deep);
+}
+.update button{
+  padding:5px 14px;border-radius:8px;border:1px solid var(--brand);
+  background:var(--brand-deep);color:#fff;font-size:13px;font-weight:700;transition:.15s;
+}
+.update button:hover{background:#065B59}
+
 .offline{
   display:flex;align-items:center;gap:14px;flex-wrap:wrap;
   padding:11px 22px;background:#FDF3E0;border-bottom:1px solid #EFDFBC;
@@ -669,6 +680,10 @@ input[type=date].inp{font-variant-numeric:tabular-nums;max-width:190px}
 </head>
 <body>
 
+<div class="update" id="updateBar" hidden>
+  <span>יצאה גרסה חדשה של הלוח.</span>
+  <button id="updateGo">רענון</button>
+</div>
 <div class="offline" id="offlineBar" hidden>
   <span class="ob-txt">
     <b>העותק הזה לא מסתנכרן.</b>
@@ -913,6 +928,7 @@ input[type=date].inp{font-variant-numeric:tabular-nums;max-width:190px}
       <p class="small">שלחי לעצמך את הקישור בוואטסאפ ופתחי אותו בנייד — הלוח יתחבר לבד. מי שמחזיק בקישור יכול לראות ולערוך את התוכן, אז אל תפרסמי אותו.</p>
     </div>
 
+    <p class="small" id="buildTag" style="opacity:.55"></p>
     <div class="askacts">
       <button class="btn btn-danger" id="syncStop" hidden>ניתוק</button>
       <button class="btn btn-ghost" id="syncClose">סגירה</button>
@@ -2257,6 +2273,7 @@ function openSync(){
   $("syncStop").hidden=!on;
   if(on)$("syncLink").value=syncLink();
   $("syncPaste").value="";
+  $("buildTag").textContent="גרסה "+BUILD;
   $("sync").hidden=false;
 }
 function closeSync(){$("sync").hidden=true}
@@ -2340,6 +2357,29 @@ $("syncStop").onclick=function(){
   });
 };
 
+/* ── keeping every device on the same build ──
+   The page itself is cacheable, so a phone can happily run last week's code
+   for hours. A tiny version file fetched with no-store settles who is stale;
+   when the board is idle it refreshes itself, and when she is mid-edit it
+   waits and offers a button instead of yanking the page away. */
+var BUILD="026f7e2d";
+function versionCheck(){
+  if(!/^https?:/.test(location.protocol))return;
+  fetch("version.json?t="+Date.now(),{cache:"no-store"})
+    .then(function(r){return r.ok?r.json():null})
+    .then(function(v){
+      if(!v||!v.build||v.build===BUILD)return;
+      var busy=editing||!$("ask").hidden||!$("onboard").hidden||pushTimer;
+      if(busy){$("updateBar").hidden=false;return}
+      location.reload();
+    })
+    .catch(function(){});
+}
+$("updateGo").onclick=function(){location.reload()};
+window.addEventListener("focus",versionCheck);
+document.addEventListener("visibilitychange",function(){if(!document.hidden)versionCheck()});
+setInterval(versionCheck,5*60*1000);
+
 /* ── boot ── */
 load();
 var freshDevice=false;
@@ -2364,6 +2404,7 @@ render();
 paintSync();
 if(SYNC_ON&&syncKey)pullThenSync();
 if(SYNC_ON&&freshDevice)$("onboard").hidden=false;
+setTimeout(versionCheck,1500);
 })();
 </script>
 
