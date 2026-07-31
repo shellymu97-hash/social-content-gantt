@@ -873,6 +873,22 @@ input[type=date].inp{font-variant-numeric:tabular-nums;max-width:190px}
   </div>
 </div>
 
+<div class="ask" id="onboard" hidden role="dialog" aria-modal="true" aria-labelledby="obT">
+  <div class="askbox syncbox">
+    <h3 id="obT">חיבור הלוח למכשיר הזה</h3>
+    <p class="small">כדי שהתוכן יופיע גם כאן, הדביקי את הקישור האישי שלך — זה שמופיע בשורת הכתובת במחשב, עם הסימן <code dir="ltr">#k=</code>.</p>
+    <div class="grp">
+      <div class="copyrow">
+        <input id="obPaste" placeholder="הדביקי כאן את הקישור" dir="ltr">
+        <button id="obJoin">חיבור</button>
+      </div>
+    </div>
+    <div class="syncsep">או</div>
+    <button class="btn btn-ghost" id="obNew">התחלת לוח חדש מאפס</button>
+    <p class="small">לוח חדש לא יראה את התוכן הקיים שלך.</p>
+  </div>
+</div>
+
 <div class="ask" id="sync" hidden role="dialog" aria-modal="true" aria-labelledby="syncT">
   <div class="askbox syncbox">
     <h3 id="syncT">סנכרון בין מכשירים</h3>
@@ -2016,6 +2032,7 @@ $("mPrint").onclick=function(){
 /* ── keyboard ── */
 document.addEventListener("keydown",function(e){
   if(e.key==="Escape"){
+    if(!$("onboard").hidden)return;
     if(!$("sync").hidden){closeSync();return}
     if(!$("ask").hidden){closeAsk(false);return}
     if(menu.classList.contains("on")){menu.classList.remove("on");return}
@@ -2157,6 +2174,13 @@ function pullThenSync(){
 function syncLink(){
   return location.origin+location.pathname+"#k="+syncKey;
 }
+/* The URL is the credential. Put it back whenever it is missing so that
+   bookmarks, history entries and "share page" all carry the whole thing. */
+function showKeyInUrl(){
+  if(!SYNC_ON||!syncKey)return;
+  if(location.hash.indexOf(syncKey)>-1)return;
+  try{history.replaceState(null,"",location.pathname+location.search+"#k="+syncKey)}catch(e){}
+}
 function openSync(){
   var on=!!syncKey;
   $("syncLead").textContent=on
@@ -2173,6 +2197,34 @@ function closeSync(){$("sync").hidden=true}
 
 /* the offline copy can still hand its content over as a backup file */
 $("obSave").onclick=function(){$("mExport").onclick()};
+
+function joinKey(raw){
+  var v=(raw||"").trim();
+  var m=v.match(/#k=([A-Za-z0-9_-]{40,})/);
+  var k=m?m[1]:v;
+  if(!/^[A-Za-z0-9_-]{40,}$/.test(k))return false;
+  syncKey=k;
+  try{localStorage.setItem(KKEY,syncKey);localStorage.removeItem(TKEY)}catch(e){}
+  showKeyInUrl();
+  return true;
+}
+$("obJoin").onclick=function(){
+  if(!joinKey($("obPaste").value)){toast("הקישור לא נראה תקין — העתיקי אותו שוב במלואו");return}
+  $("onboard").hidden=true;
+  pullThenSync();
+};
+$("obPaste").addEventListener("keydown",function(e){if(e.key==="Enter")$("obJoin").onclick()});
+$("obNew").onclick=function(){
+  ask({title:"להתחיל לוח חדש?",
+       body:"הלוח הזה יהיה נפרד מכל לוח קיים שלך, ולא יציג את התוכן שכבר הקלדת.",
+       ok:"לוח חדש"},function(){
+    syncKey=newKey();
+    try{localStorage.setItem(KKEY,syncKey)}catch(e){}
+    showKeyInUrl();
+    $("onboard").hidden=true;
+    setSync("syncing");pushNow();startPolling();
+  });
+};
 
 $("mSync").onclick=openSync;
 $("synPill").onclick=openSync;
@@ -2228,25 +2280,15 @@ var freshDevice=false;
 if(SYNC_ON){
   var hm=location.hash.match(/[#&]k=([A-Za-z0-9_-]{40,})/);
   if(hm){
-    /* opened via the phone link — join that plan */
     syncKey=hm[1];
     try{localStorage.setItem(KKEY,syncKey);localStorage.removeItem(TKEY)}catch(e){}
-    try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}
   }else{
     try{syncKey=localStorage.getItem(KKEY)||""}catch(e){}
-    if(!syncKey){
-      /* A device with nothing on it has nothing to lose: switch sync on by
-         itself so the board is backed up from the very first keystroke.
-         A device that already holds work gets asked instead, because silently
-         creating a second plan is exactly how boards drift apart. */
-      var hadLocal=false;
-      try{hadLocal=!!localStorage.getItem(KEY)}catch(e){}
-      if(hadLocal)freshDevice=true; else{
-        syncKey=newKey();
-        try{localStorage.setItem(KKEY,syncKey)}catch(e){}
-      }
-    }
   }
+  /* Never invent a plan on a device that arrived without a key — that is how
+     the board silently forked into two. Ask instead. */
+  freshDevice=!syncKey;
+  showKeyInUrl();
   setSync(syncKey?"syncing":"off");
 }
 if(window.matchMedia&&window.matchMedia("(max-width:700px)").matches){
@@ -2255,7 +2297,7 @@ if(window.matchMedia&&window.matchMedia("(max-width:700px)").matches){
 render();
 paintSync();
 if(SYNC_ON&&syncKey)pullThenSync();
-if(SYNC_ON&&freshDevice)setTimeout(openSync,600);
+if(SYNC_ON&&freshDevice)$("onboard").hidden=false;
 })();
 </script>
 
