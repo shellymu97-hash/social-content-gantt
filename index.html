@@ -575,6 +575,21 @@ input[type=date].inp{font-variant-numeric:tabular-nums;max-width:190px}
 .btn-primary.danger{background:#C0392B}
 .btn-primary.danger:hover{background:#A5301F}
 
+.offline{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:11px 22px;background:#FDF3E0;border-bottom:1px solid #EFDFBC;
+  font-size:13.5px;color:#7A6234;
+}
+.offline b{font-weight:700;color:#5E4A22}
+.offline .ob-txt{flex:1;min-width:220px;line-height:1.5}
+.offline .ob-go,.offline .ob-save{
+  padding:7px 14px;border-radius:9px;font-size:13.5px;white-space:nowrap;
+  border:1px solid #E0CB9E;color:#5E4A22;text-decoration:none;transition:.15s;
+}
+.offline .ob-go{background:#5E4A22;color:#fff;border-color:#5E4A22;font-weight:700}
+.offline .ob-go:hover{background:#48381A}
+.offline .ob-save:hover{background:#F7E9CC}
+
 /* sync */
 .synpill{
   display:inline-flex;align-items:center;gap:7px;
@@ -653,6 +668,15 @@ input[type=date].inp{font-variant-numeric:tabular-nums;max-width:190px}
 </style>
 </head>
 <body>
+
+<div class="offline" id="offlineBar" hidden>
+  <span class="ob-txt">
+    <b>העותק הזה לא מסתנכרן.</b>
+    מה שתקלידי כאן יישאר בדפדפן הזה בלבד ולא יגיע לנייד.
+  </span>
+  <a class="ob-go" href="https://shellymu97-hash.github.io/social-content-gantt/" target="_blank" rel="noopener">מעבר ללוח החי</a>
+  <button class="ob-save" id="obSave">שמירת מה שיש כאן</button>
+</div>
 <div class="app">
   <header class="topbar">
     <div class="brand">
@@ -1547,6 +1571,12 @@ function openEditor(id){
 }
 function closeEditor(){
   editing=null;
+  if(pendingAdopt){
+    var row=pendingAdopt;pendingAdopt=null;
+    if(lastTouched()<=(Date.parse(row.updated_at)||0)){
+      adopt(row);toast("עודכן מהמכשיר השני");
+    }
+  }
   $("drawer").classList.remove("on");
   $("scrim").classList.remove("on");
   render();
@@ -1998,6 +2028,9 @@ var SUPA_URL="https://qphhoqasojqlazzvvoci.supabase.co";
 var SUPA_KEY="sb_publishable_ERLrJjXjCDDME9FjV410MQ_2aWJW_hH";
 var KKEY="shelly-content-sync-key",TKEY="shelly-content-touched";
 var syncKey="",syncStatus="off",pushTimer=null,pulling=false;
+var serverAt=0;          /* last server timestamp we know about */
+var pollTimer=null,POLL_MS=20000;
+var pendingAdopt=null;   /* a pull that arrived while the editor was open */
 
 function touched(){try{localStorage.setItem(TKEY,String(Date.now()))}catch(e){}}
 function lastTouched(){return +(localStorage.getItem(TKEY)||0)}
@@ -2024,11 +2057,15 @@ function persistKey(){
 function setSync(st){syncStatus=st;paintSync()}
 function paintSync(){
   var pill=$("synPill");
-  if(!SYNC_ON){pill.hidden=true;$("mSync").hidden=true;return}
+  if(!SYNC_ON){
+    pill.hidden=true;$("mSync").hidden=true;
+    $("offlineBar").hidden=false;
+    return;
+  }
   pill.hidden=false;
   pill.dataset.st=syncStatus;
   $("synTxt").textContent=
-    syncStatus==="ok"?"מסונכרן":
+    syncStatus==="ok"?"מסונכרן · חיבור הנייד":
     syncStatus==="syncing"?"שומר…":
     syncStatus==="err"?"הסנכרון נתקע":"סנכרון כבוי";
 }
@@ -2041,9 +2078,55 @@ function pushNow(){
   if(!SYNC_ON||!syncKey)return;
   setSync("syncing");
   rpc("plan_push",{p_key:syncKey,p_data:snapshot()})
-    .then(function(){persistKey();setSync("ok")})
+    .then(function(ts){
+      persistKey();
+      serverAt=Date.parse(ts)||Date.now();
+      setSync("ok");
+    })
     .catch(function(){setSync("err")});
 }
+
+function adopt(row){
+  state.months=migrate(row.data.months);
+  if(Array.isArray(row.data.ideas))state.ideas=row.data.ideas;
+  if(row.data.ui&&typeof row.data.ui.dense==="boolean")dense=row.data.ui.dense;
+  serverAt=Date.parse(row.updated_at)||Date.now();
+  saveLocal();touched();persistKey();
+  render();
+}
+
+/* Poll a timestamp rather than the plan itself. A change is adopted only when
+   the server copy is newer than our own last edit, so local work is never
+   silently thrown away. */
+function poll(){
+  if(!SYNC_ON||!syncKey||pulling||syncStatus==="syncing")return;
+  rpc("plan_stamp",{p_key:syncKey}).then(function(ts){
+    var at=Date.parse(ts)||0;
+    if(!at||at===serverAt)return;
+    if(lastTouched()>at){pushNow();return}
+    pulling=true;
+    return rpc("plan_pull",{p_key:syncKey}).then(function(rows){
+      var row=rows&&rows[0];
+      pulling=false;
+      if(!row||!row.data||!row.data.months)return;
+      if(editing){pendingAdopt=row;return}   /* don't yank the open card away */
+      adopt(row);
+      setSync("ok");
+      toast("עודכן מהמכשיר השני");
+    },function(){pulling=false});
+  }).catch(function(){});
+}
+function startPolling(){
+  if(pollTimer)clearInterval(pollTimer);
+  if(!SYNC_ON||!syncKey)return;
+  pollTimer=setInterval(poll,POLL_MS);
+}
+/* coming back to the tab is the moment a stale board is most obvious */
+document.addEventListener("visibilitychange",function(){
+  if(!document.hidden)poll();
+});
+window.addEventListener("focus",poll);
+window.addEventListener("online",function(){poll();schedulePush()});
 /* server wins when it was written after our last local edit; otherwise we upload */
 function pullThenSync(){
   if(!SYNC_ON||!syncKey)return;
@@ -2051,17 +2134,15 @@ function pullThenSync(){
   pulling=true;
   rpc("plan_pull",{p_key:syncKey}).then(function(rows){
     var row=rows&&rows[0];
+    pulling=false;
     if(row&&row.data&&row.data.months&&Date.parse(row.updated_at)>lastTouched()){
-      state.months=migrate(row.data.months);
-      if(Array.isArray(row.data.ideas))state.ideas=row.data.ideas;
-      if(row.data.ui&&typeof row.data.ui.dense==="boolean")dense=row.data.ui.dense;
-      saveLocal();touched();persistKey();
-      pulling=false;render();setSync("ok");
-      toast("התוכן עודכן מהמכשיר השני");
-      return;
+      adopt(row);setSync("ok");
+      toast("התוכן נטען מהענן");
+    }else{
+      pushNow();
     }
-    pulling=false;pushNow();
-  }).catch(function(){pulling=false;setSync("err")});
+    startPolling();
+  }).catch(function(){pulling=false;setSync("err");startPolling()});
 }
 
 function syncLink(){
@@ -2070,8 +2151,8 @@ function syncLink(){
 function openSync(){
   var on=!!syncKey;
   $("syncLead").textContent=on
-    ? "הלוח מסונכרן. כל שינוי נשמר בענן ומופיע בכל מכשיר שמחובר עם הקישור הזה."
-    : "הפעלת סנכרון תשמור את הלוח בענן, כדי שתוכלי להמשיך לערוך אותו גם מהנייד.";
+    ? "הלוח נשמר בענן אוטומטית. פתחי את הקישור הזה בנייד — ומאותו רגע כל שינוי מופיע בשני המכשירים."
+    : "בדפדפן הזה כבר יש תוכן. אפשר להעלות אותו לענן, או להתחבר ללוח שכבר קיים במכשיר אחר.";
   $("syncOnBox").hidden=!on;
   $("syncOffBox").hidden=on;
   $("syncStop").hidden=!on;
@@ -2080,6 +2161,9 @@ function openSync(){
   $("sync").hidden=false;
 }
 function closeSync(){$("sync").hidden=true}
+
+/* the offline copy can still hand its content over as a backup file */
+$("obSave").onclick=function(){$("mExport").onclick()};
 
 $("mSync").onclick=openSync;
 $("synPill").onclick=openSync;
@@ -2091,8 +2175,9 @@ $("syncStart").onclick=function(){
   try{localStorage.setItem(KKEY,syncKey)}catch(e){}
   touched();
   setSync("syncing");
-  rpc("plan_push",{p_key:syncKey,p_data:snapshot()}).then(function(){
-    persistKey();setSync("ok");openSync();toast("הסנכרון הופעל");
+  rpc("plan_push",{p_key:syncKey,p_data:snapshot()}).then(function(ts){
+    persistKey();serverAt=Date.parse(ts)||Date.now();startPolling();
+    setSync("ok");openSync();toast("הסנכרון הופעל");
   }).catch(function(){
     setSync("err");openSync();
     toast("לא הצלחתי להתחבר לענן מהדף הזה");
@@ -2130,14 +2215,28 @@ $("syncStop").onclick=function(){
 
 /* ── boot ── */
 load();
+var freshDevice=false;
 if(SYNC_ON){
   var hm=location.hash.match(/[#&]k=([A-Za-z0-9_-]{40,})/);
   if(hm){
+    /* opened via the phone link — join that plan */
     syncKey=hm[1];
     try{localStorage.setItem(KKEY,syncKey);localStorage.removeItem(TKEY)}catch(e){}
     try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}
   }else{
     try{syncKey=localStorage.getItem(KKEY)||""}catch(e){}
+    if(!syncKey){
+      /* A device with nothing on it has nothing to lose: switch sync on by
+         itself so the board is backed up from the very first keystroke.
+         A device that already holds work gets asked instead, because silently
+         creating a second plan is exactly how boards drift apart. */
+      var hadLocal=false;
+      try{hadLocal=!!localStorage.getItem(KEY)}catch(e){}
+      if(hadLocal)freshDevice=true; else{
+        syncKey=newKey();
+        try{localStorage.setItem(KKEY,syncKey)}catch(e){}
+      }
+    }
   }
   setSync(syncKey?"syncing":"off");
 }
@@ -2147,6 +2246,7 @@ if(window.matchMedia&&window.matchMedia("(max-width:700px)").matches){
 render();
 paintSync();
 if(SYNC_ON&&syncKey)pullThenSync();
+if(SYNC_ON&&freshDevice)setTimeout(openSync,600);
 })();
 </script>
 
