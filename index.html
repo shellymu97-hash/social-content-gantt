@@ -1964,11 +1964,20 @@ $("mClear").onclick=function(){
   });
 };
 $("mExport").onclick=function(){
-  var json=JSON.stringify({v:1,months:state.months},null,2);
+  var json=JSON.stringify(snapshot(),null,2);
+  var name="תוכן-סושיאל-"+todayISO()+".json";
+  /* published artifacts run sandboxed, where an <a download> is ignored;
+     the host gives them a save API instead */
+  if(window.claude&&window.claude.downloads&&window.claude.downloads.save){
+    window.claude.downloads.save({filename:name,data:json}).then(
+      function(){toast("קובץ הגיבוי נשמר")},
+      function(){toast("השמירה בוטלה")});
+    return;
+  }
   try{
     var a=document.createElement("a");
     a.href=URL.createObjectURL(new Blob([json],{type:"application/json"}));
-    a.download="תוכן-סושיאל-"+todayISO()+".json";
+    a.download=name;
     document.body.appendChild(a);a.click();a.remove();
     setTimeout(function(){URL.revokeObjectURL(a.href)},1000);
     toast("קובץ הגיבוי ירד");
