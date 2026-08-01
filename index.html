@@ -24,10 +24,11 @@
   --t-reel:#9A81C8;     --t-reel-bg:#F4EFFA;     --t-reel-ln:#DCD0EF;     --t-reel-tx:#6B4C9E;
   --t-project:#DE93AE;  --t-project-bg:#FCEFF4;  --t-project-ln:#F4D3DF;  --t-project-tx:#A54F6D;
 
-  --s-todo-fg:#7C908E;  --s-todo-bg:#F0F4F4;
-  --s-doing-fg:#B08A4A; --s-doing-bg:#FAF2E4;
-  --s-ready-fg:#5A87BC; --s-ready-bg:#EDF3FA;
-  --s-live-fg:#4E9A79;  --s-live-bg:#EAF5F0;
+  /* one scale: grey while it waits, then green deepening to publication */
+  --s-todo-fg:#82949E;  --s-todo-bg:#F1F4F6;
+  --s-doing-fg:#6FA886; --s-doing-bg:#F0F7F2;
+  --s-ready-fg:#1E7A4C; --s-ready-bg:#E7F3EC;
+  --s-live-fg:#04A94D;  --s-live-bg:#E2FAEC;
 
   /* holiday chrome — warm neutral, deliberately quiet next to the content colours */
   --hol:#9C8E7F; --hol-strong:#87796A; --hol-bg:#FCFAF6;
@@ -130,6 +131,13 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .chip[aria-pressed="true"]{background:var(--cbg);border-color:var(--c);color:var(--ct);font-weight:700}
 .chip[aria-pressed="true"] .n{color:inherit;opacity:.75}
 .legend.filtered .chip:not([aria-pressed="true"]){opacity:.45}
+.legend.filtered .chip-edit{opacity:1}
+.chip-edit{
+  gap:5px;padding:5px 12px;color:var(--brand-deep);
+  border-style:dashed;border-color:var(--brand);background:transparent;
+}
+.chip-edit:hover{background:var(--brand-tint)}
+.chip-edit svg{width:11px;height:11px}
 
 .progress{display:flex;align-items:center;gap:12px}
 .bar{
@@ -137,9 +145,9 @@ button{cursor:pointer;background:none;border:0;padding:0}
   overflow:hidden;display:flex;
 }
 .bar i{display:block;height:100%;transition:width .4s cubic-bezier(.2,.8,.3,1)}
-.bar .b-live{background:#1B8258}
-.bar .b-ready{background:#4A90D9}
-.bar .b-doing{background:#E3B457}
+.bar .b-live{background:#04A94D}
+.bar .b-ready{background:#1E7A4C}
+.bar .b-doing{background:#8FBFA1}
 .progress .txt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 .progress .txt b{color:var(--ink);font-weight:700}
 
@@ -308,11 +316,11 @@ button{cursor:pointer;background:none;border:0;padding:0}
 
 .goal{
   display:inline-flex;align-items:center;
-  padding:2px 9px;border-radius:99px;white-space:nowrap;
-  background:var(--brand-tint);color:var(--brand-deep);
+  padding:2px 10px;border-radius:99px;white-space:nowrap;
+  background:transparent;border:1px solid var(--brand);color:var(--brand-deep);
   font-size:10.5px;font-weight:700;letter-spacing:.02em;
 }
-.card .goal{font-size:9.5px;padding:1.5px 7px}
+.card .goal{font-size:9.5px;padding:1px 8px}
 .list .dayrow .holtag{
   padding:2px 9px;border-radius:99px;background:var(--hol-bg);
   border:1px solid #EDE6DA;color:var(--hol);font-size:11px;
@@ -360,6 +368,13 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .ideahead h2{margin:0 0 3px;font-size:20px;font-weight:700;letter-spacing:-.01em}
 .ideahead p{margin:0;font-size:13.5px;color:var(--muted);max-width:56ch;line-height:1.6}
 .ideahead .btn{margin-inline-start:auto}
+.ideaclose{
+  order:3;width:36px;height:36px;border-radius:10px;flex:none;
+  display:grid;place-items:center;color:var(--muted);
+  border:1px solid var(--line);background:var(--surface);transition:.15s;
+}
+.ideaclose:hover{border-color:var(--brand);color:var(--brand-deep);background:var(--brand-tint)}
+.ideaclose svg{width:15px;height:15px}
 .ideagrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(236px,1fr));gap:12px}
 .note{
   position:relative;display:flex;flex-direction:column;gap:8px;
@@ -467,8 +482,9 @@ button{cursor:pointer;background:none;border:0;padding:0}
 input[type=date].inp{font-variant-numeric:tabular-nums;max-width:190px}
 
 .opts{display:flex;gap:6px;flex-wrap:wrap}
+.goal-opt{border-radius:99px}
 .goal-opt[aria-pressed="true"]{
-  background:var(--brand-tint);border-color:var(--brand);
+  background:transparent;border-color:var(--brand);border-width:1.5px;
   color:var(--brand-deep);font-weight:700;
 }
 .opt{
@@ -932,6 +948,9 @@ input[type=date].inp{font-variant-numeric:tabular-nums;max-width:190px}
           <h2>רעיונות תוכן</h2>
           <p>פתקים לנושאים שעוד לא שובצו. אפשר לשלוף אותם לתוך משבצת מהשדה ״שם הנושא״.</p>
         </div>
+        <button class="ideaclose" id="ideaClose" title="חזרה ללוח" aria-label="סגירה וחזרה ללוח">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
         <button class="btn btn-primary" id="ideaAdd">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
           פתק חדש
@@ -1294,7 +1313,7 @@ var BODY_PH={
   project:"איך הפוסט נראה — צילומי מסך, מוקאפים, פלטה, אנימציה…"
 };
 var STATUSES=[
-  {id:"todo", label:"לא בוצע", fg:"var(--s-todo-fg)", bg:"var(--s-todo-bg)"},
+  {id:"todo", label:"בהמתנה", fg:"var(--s-todo-fg)", bg:"var(--s-todo-bg)"},
   {id:"doing",label:"בעבודה",  fg:"var(--s-doing-fg)",bg:"var(--s-doing-bg)"},
   {id:"ready",label:"מוכן",    fg:"var(--s-ready-fg)",bg:"var(--s-ready-bg)"},
   {id:"live", label:"פורסם",   fg:"var(--s-live-fg)", bg:"var(--s-live-bg)"}
@@ -1577,6 +1596,13 @@ function renderChrome(){
     b.onclick=function(){state.filters[t.id]=!state.filters[t.id];render()};
     lg.appendChild(b);
   });
+  /* editing the type list belongs next to the types themselves, not buried
+     inside a post */
+  var edit=el("button","chip chip-edit");
+  edit.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>סוגי תוכן';
+  edit.title="הוספה, עריכה ומחיקה של סוגי תוכן";
+  edit.onclick=openTypes;
+  lg.appendChild(edit);
 
   var total=slots.length||1;
   var bars=$("bar").children;
@@ -1912,6 +1938,7 @@ function renderIdeas(){
     autoGrow(ta);
   });
 }
+$("ideaClose").onclick=function(){setView(mobile()?"list":"cal")};
 $("ideaAdd").onclick=function(){
   state.ideas.unshift({id:uid(),text:"",used:false});
   save();renderIdeas();
@@ -3130,7 +3157,7 @@ $("syncStop").onclick=function(){
    for hours. A tiny version file fetched with no-store settles who is stale;
    when the board is idle it refreshes itself, and when she is mid-edit it
    waits and offers a button instead of yanking the page away. */
-var BUILD="9002c071";
+var BUILD="a3fb71ef";
 function versionCheck(){
   if(!/^https?:/.test(location.protocol))return;
   fetch("version.json?t="+Date.now(),{cache:"no-store"})
