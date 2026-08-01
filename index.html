@@ -3130,7 +3130,7 @@ $("syncStop").onclick=function(){
    for hours. A tiny version file fetched with no-store settles who is stale;
    when the board is idle it refreshes itself, and when she is mid-edit it
    waits and offers a button instead of yanking the page away. */
-var BUILD="db94e1b0";
+var BUILD="9002c071";
 function versionCheck(){
   if(!/^https?:/.test(location.protocol))return;
   fetch("version.json?t="+Date.now(),{cache:"no-store"})
@@ -3237,9 +3237,19 @@ function migrateIntoAccount(){
 
 function afterSignIn(){
   gateHide();
+  var carryOver=migrateOnSignup;
+  migrateOnSignup=false;
+  if(!carryOver){
+    /* A new account starts empty. Whatever board this browser happened to be
+       holding belongs to whoever was here before — inheriting it silently is
+       how one person's plan ends up in someone else's account. */
+    state.months={};state.ideas=[];state.types=null;
+    syncKey="";
+    try{localStorage.removeItem(KEY);localStorage.removeItem(TKEY);localStorage.removeItem(KKEY)}catch(e){}
+    try{history.replaceState(null,"",location.pathname)}catch(e){}
+  }
   return loadProfile().then(function(){
-    if(!migrateOnSignup)return null;
-    migrateOnSignup=false;
+    if(!carryOver)return null;
     return migrateIntoAccount();
   }).then(function(moved){
     render();
