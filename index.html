@@ -870,6 +870,10 @@ input[type=date].inp{font-variant-numeric:tabular-nums;max-width:190px}
           </button>
           <hr>
           <div class="lbl">סנכרון וגיבוי</div>
+          <button id="mAccount" role="menuitem" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            פתיחת חשבון אישי
+          </button>
           <button id="mSync" role="menuitem">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-7.4-3.9"/><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 7.4 3.9"/><path d="M20 3v5h-5"/><path d="M4 21v-5h5"/></svg>
             סנכרון בין מכשירים
@@ -2580,6 +2584,7 @@ function paintSync(){
   }
   /* Sync is meant to be invisible. Only a genuine failure is worth a word,
      and that goes in the menu rather than across the toolbar. */
+  $("mAccount").hidden = signedIn();
   var m=$("mSync");
   m.classList.toggle("warn",syncStatus==="err");
   m.title=syncStatus==="err"?"הסנכרון נתקע — לחצי לפרטים":"";
@@ -3076,7 +3081,7 @@ $("syncStop").onclick=function(){
    for hours. A tiny version file fetched with no-store settles who is stale;
    when the board is idle it refreshes itself, and when she is mid-edit it
    waits and offers a button instead of yanking the page away. */
-var BUILD="5e2fb066";
+var BUILD="240d4a5b";
 function versionCheck(){
   if(!/^https?:/.test(location.protocol))return;
   fetch("version.json?t="+Date.now(),{cache:"no-store"})
@@ -3117,6 +3122,15 @@ function gateBusy(on,btn){
 }
 $("toLogin").onclick=function(){gateShow("login")};
 $("toSignup").onclick=function(){gateShow("signup")};
+$("mAccount").onclick=function(){
+  migrateOnSignup=true;
+  gateShow("signup");
+  var filled=contentSize(snapshot());
+  $("gateLead").textContent = filled
+    ? "פתיחת חשבון תעביר את הלוח הנוכחי אלייך — "+filled+" פריטי תוכן. הקישור הישן יישאר כגיבוי."
+    : "כמה פרטים, והלוח שלך מוכן — עם הלוגו ושם העסק שלך למעלה.";
+  if(profile.business_name)$("suBiz").value=profile.business_name;
+};
 
 /* the logo is squared off and shrunk here so the header never has to carry a
    multi-megabyte data URL around on every sync */
@@ -3156,12 +3170,38 @@ $("logoDrop").addEventListener("drop",function(e){
   if(e.dataTransfer&&e.dataTransfer.files[0])readLogo(e.dataTransfer.files[0]);
 });
 
+var migrateOnSignup=false;
+
+/* Moving from a shared link to an account should bring the board along, and
+   should say so. The link's copy is left untouched as a fallback. */
+function migrateIntoAccount(){
+  var snap=snapshot();
+  if(contentSize(snap)===0)return Promise.resolve(false);
+  return accountPush(snap).then(function(){
+    var oldKey=syncKey;
+    syncKey="";
+    try{localStorage.removeItem(KKEY)}catch(e){}
+    try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}
+    return oldKey;
+  });
+}
+
 function afterSignIn(){
   gateHide();
   return loadProfile().then(function(){
+    if(!migrateOnSignup)return null;
+    migrateOnSignup=false;
+    return migrateIntoAccount();
+  }).then(function(moved){
     render();
     setSync("syncing");
-    pullThenSync();
+    if(moved){
+      startPolling();
+      setSync("ok");
+      toast("הלוח עבר לחשבון שלך");
+    }else{
+      pullThenSync();
+    }
   });
 }
 
@@ -3256,6 +3296,7 @@ if(SYNC_ON){
   }else if(!syncKey){
     needGate=true;
   }
+  if(/[?&]signup=1/.test(location.search)&&!signedIn())needGate="signup";
   showKeyInUrl();
   setSync(syncReady()?"syncing":"off");
 }
@@ -3274,7 +3315,7 @@ if(signedIn()){
 }else if(syncKey){
   pullThenSync();
 }
-if(SYNC_ON&&needGate)gateShow("login");
+if(SYNC_ON&&needGate)gateShow(needGate==="signup"?"signup":"login");
 setTimeout(versionCheck,1500);
 })();
 </script>
