@@ -167,17 +167,20 @@ button{cursor:pointer;background:none;border:0;padding:0}
 
 /* ───────── calendar ───────── */
 .scroller{flex:1;overflow:auto;padding:0 22px 22px}
-.board{--colmin:0px;--wecol:1fr;--wemin:0px}
-.board.full{
-  --colmin:212px;--wecol:.58fr;--wemin:112px;
-  min-width:calc(212px * 5 + 112px * 2 + 8px * 6);
-}
+.board{--colmin:0px}
+.board.full{--colmin:236px;min-width:calc(236px * 5 + 8px * 4)}
 .board .cols{
   display:grid;
+  grid-template-columns:repeat(5, minmax(var(--colmin), 1fr));
+  gap:8px;
+}
+/* a weekend day only earns a column when something is actually planned on it */
+.board.weekend{--colmin:214px}
+.board.weekend.full{min-width:calc(214px * 5 + 150px * 2 + 8px * 6)}
+.board.weekend .cols{
   grid-template-columns:
     repeat(5, minmax(var(--colmin), 1fr))
-    repeat(2, minmax(var(--wemin),  var(--wecol)));
-  gap:8px;
+    repeat(2, minmax(150px, .7fr));
 }
 .weekhead{
   position:sticky;top:0;z-index:5;background:var(--bg);
@@ -192,9 +195,11 @@ button{cursor:pointer;background:none;border:0;padding:0}
 
 .cell{
   background:var(--surface);border:1px solid var(--line);border-radius:var(--r-m);
-  min-height:132px;padding:8px;display:flex;flex-direction:column;gap:6px;
+  min-height:132px;padding:9px 9px 11px;display:flex;flex-direction:column;gap:6px;
   transition:border-color .15s,background .15s;
 }
+.board.full .cell>.card:first-of-type{margin-top:6px}
+.board.full .cellhead{margin-bottom:2px}
 .board.full .cell{min-height:150px}
 .cell.pad{background:transparent;border-color:transparent;box-shadow:none}
 .cell.we{background:#FCFDFD}
@@ -838,7 +843,7 @@ input[type=date].inp{font-variant-numeric:tabular-nums;max-width:190px}
   .progress{width:100%;margin-inline-start:0}
   .weekhead div{font-size:0}
   .weekhead div::first-letter{font-size:12px}
-  .board.full{--colmin:170px;--wemin:96px;min-width:calc(170px * 5 + 96px * 2 + 8px * 6)}
+  .board.full{--colmin:180px;min-width:calc(180px * 5 + 8px * 4)}
   .cell{min-height:96px;padding:5px;gap:4px}
   .board.full .cell{min-height:130px}
   .card{padding:5px 7px}
@@ -1799,35 +1804,48 @@ function cardEl(s){
 function renderCal(){
   var grid=$("grid"),head=$("weekhead");
   grid.textContent="";head.textContent="";
-  DAYS.forEach(function(d,i){
-    var h=el("div",i>=5?"we":"");h.textContent=d;head.appendChild(h);
-  });
 
   var y=cursor.getFullYear(),m=cursor.getMonth();
-  var first=new Date(y,m,1).getDay();
   var last=new Date(y,m+1,0).getDate();
-  var prevLast=new Date(y,m,0).getDate();
+  var slots=visible(slotsOf(monthKey(cursor)));
   var byDate={};
-  visible(slotsOf(monthKey(cursor))).forEach(function(s){
-    (byDate[s.date]=byDate[s.date]||[]).push(s);
+  slots.forEach(function(s){(byDate[s.date]=byDate[s.date]||[]).push(s)});
+
+  /* Friday and Saturday are hidden — unless she has actually planned something
+     there, in which case hiding it would lose the content on screen. */
+  var weekendUsed=false;
+  slots.forEach(function(s){
+    var wd=parseISO(s.date).getDay();
+    if(wd>=5)weekendUsed=true;
   });
-  var tISO=todayISO();
-  var cells=Math.ceil((first+last)/7)*7;
+  var cols=weekendUsed?7:5;
+  $("board").classList.toggle("weekend",weekendUsed);
 
-  /* pad the scan by a few days so shifted memorial days that land inside the grid are caught */
-  var gStart=new Date(y,m,1-first),gEnd=new Date(y,m,cells-first);
+  for(var c=0;c<cols;c++){
+    var h=el("div",c>=5?"we":"");h.textContent=DAYS[c];head.appendChild(h);
+  }
+
+  var gStart=new Date(y,m,1),gEnd=new Date(y,m,last);
   var HOL=holidays(addDays(gStart,-4),addDays(gEnd,4));
+  var tISO=todayISO();
 
-  for(var i=0;i<cells;i++){
-    var dayNum,inMonth=true,date;
-    if(i<first){dayNum=prevLast-first+1+i;inMonth=false;date=new Date(y,m-1,dayNum)}
-    else if(i-first+1>last){dayNum=i-first+1-last;inMonth=false;date=new Date(y,m+1,dayNum)}
-    else{dayNum=i-first+1;date=new Date(y,m,dayNum)}
-    var ds=iso(date),wd=date.getDay();
+  var days=[];
+  for(var day=1;day<=last;day++){
+    var d=new Date(y,m,day),wd=d.getDay();
+    if(wd>=cols)continue;               /* weekend, and nothing planned there */
+    days.push(d);
+  }
+  if(!days.length)return;
+
+  var lead=days[0].getDay();
+  for(var i=0;i<lead;i++)grid.appendChild(el("div","cell pad"));
+
+  days.forEach(function(date){
+    var ds=iso(date),wd=date.getDay(),dayNum=date.getDate();
     var hol=HOL[ds]||[];
     var isMajor=hol.some(function(x){return x.kind==="major"});
 
-    var c=el("div","cell"+(inMonth?"":" pad")+(wd>=5?" we":"")+(ds===tISO?" today":"")+(isMajor&&inMonth?" hol":""));
+    var c=el("div","cell"+(wd>=5?" we":"")+(ds===tISO?" today":"")+(isMajor?" hol":""));
     c.dataset.date=ds;
 
     var hd=el("div","cellhead");
@@ -1841,20 +1859,23 @@ function renderCal(){
       });
       hd.appendChild(hw);
     }
-    if(inMonth){
-      var ab=el("button","addbtn");
-      ab.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
-      ab.title="הוספת משבצת";ab.setAttribute("aria-label","הוספת משבצת ל-"+dayNum+" ב"+MONTHS[date.getMonth()]);
-      ab.dataset.add=ds;hd.appendChild(ab);
-    }
+    var ab=el("button","addbtn");
+    ab.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+    ab.title="הוספת משבצת";
+    ab.setAttribute("aria-label","הוספת משבצת ל-"+dayNum+" ב"+MONTHS[date.getMonth()]);
+    ab.dataset.add=ds;
+    hd.appendChild(ab);
     c.appendChild(hd);
 
     (byDate[ds]||[]).forEach(function(s){c.appendChild(cardEl(s))});
     grid.appendChild(c);
-  }
+  });
+
+  var placed=lead+days.length;
+  var tail=(cols-(placed%cols))%cols;
+  for(var t=0;t<tail;t++)grid.appendChild(el("div","cell pad"));
 }
 
-/* ── render: list ── */
 function renderList(){
   var wrap=$("list");wrap.textContent="";
   var y=cursor.getFullYear(),m=cursor.getMonth();
@@ -1875,6 +1896,7 @@ function renderList(){
     var slots=(byDate[ds]||[]).slice().sort(function(a,b){
       return (a.type<b.type?-1:a.type>b.type?1:0);
     });
+    if(wd>=5&&!slots.length)continue;   /* skip empty weekends */
     anyVisible+=slots.length;
 
     var sec=el("div","dayblock"+(ds===tISO?" is-today":"")+(wd>=5?" we":"")+(slots.length?"":" empty"));
@@ -3260,7 +3282,7 @@ $("syncStop").onclick=function(){
    for hours. A tiny version file fetched with no-store settles who is stale;
    when the board is idle it refreshes itself, and when she is mid-edit it
    waits and offers a button instead of yanking the page away. */
-var BUILD="f1e0f5c6";
+var BUILD="98bb400d";
 function versionCheck(){
   if(!/^https?:/.test(location.protocol))return;
   fetch("version.json?t="+Date.now(),{cache:"no-store"})
