@@ -68,6 +68,7 @@ button{cursor:pointer;background:none;border:0;padding:0}
   font-size:12.5px;color:var(--faint);white-space:nowrap;line-height:1.3;
   padding-inline-start:11px;border-inline-start:1px solid var(--line);
 }
+.brand .sub.nologo{padding-inline-start:0;border-inline-start:0}
 .brand .sub i{display:block;font-style:normal;font-weight:700;color:var(--ink-2);font-size:13px}
 .brand .sub i:empty{display:none}
 
@@ -607,6 +608,7 @@ input[type=date].inp{font-variant-numeric:tabular-nums;max-width:190px}
 .gateform{display:flex;flex-direction:column;gap:13px}
 .grow{display:flex;flex-direction:column;gap:6px}
 .grow label{font-size:11.5px;font-weight:700;color:var(--muted);letter-spacing:.05em}
+.grow label .opt{font-weight:400;letter-spacing:0;color:var(--faint)}
 .grow .hint{font-size:11.5px;color:var(--faint)}
 .gatego{justify-content:center;margin-top:4px}
 .gateswap{margin:2px 0 0;text-align:center;font-size:13px;color:var(--muted)}
@@ -870,6 +872,10 @@ input[type=date].inp{font-variant-numeric:tabular-nums;max-width:190px}
           </button>
           <hr>
           <div class="lbl">סנכרון וגיבוי</div>
+          <button id="mPrefs" role="menuitem" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 8.9 19a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 8.4a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
+            הגדרות המשתמש
+          </button>
           <button id="mAccount" role="menuitem" hidden>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             פתיחת חשבון אישי
@@ -1080,7 +1086,7 @@ input[type=date].inp{font-variant-numeric:tabular-nums;max-width:190px}
         <span class="hint">לפחות 8 תווים</span>
       </div>
       <div class="grow">
-        <label>הלוגו שלך</label>
+        <label>הלוגו שלך <span class="opt">— לא חובה, אפשר להוסיף מאוחר יותר</span></label>
         <div class="logodrop" id="logoDrop">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg>
           <span>גררי לכאן את הלוגו או לחצי לבחירה</span>
@@ -1111,6 +1117,39 @@ input[type=date].inp{font-variant-numeric:tabular-nums;max-width:190px}
     </div>
 
     <p class="gateerr" id="gateErr" hidden></p>
+  </div>
+</div>
+
+<div class="ask" id="prefs" hidden role="dialog" aria-modal="true" aria-labelledby="prefsT">
+  <div class="askbox syncbox">
+    <h3 id="prefsT">הגדרות המשתמש</h3>
+    <div class="grow">
+      <label for="pfName">שם מלא</label>
+      <input class="inp" id="pfName" autocomplete="name">
+    </div>
+    <div class="grow">
+      <label for="pfBiz">שם העסק</label>
+      <input class="inp" id="pfBiz" autocomplete="organization">
+    </div>
+    <div class="grow">
+      <label>הלוגו <span class="opt">— מופיע בראש המערכת</span></label>
+      <div class="logodrop" id="pfLogoDrop">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg>
+        <span>גררי לכאן לוגו או לחצי לבחירה</span>
+        <input type="file" id="pfLogoFile" accept="image/*" aria-label="העלאת לוגו">
+      </div>
+      <div class="logoprev" id="pfLogoPrev" hidden>
+        <img id="pfLogoImg" alt="הלוגו הנוכחי">
+        <button id="pfLogoRm" aria-label="הסרת הלוגו">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+    </div>
+    <p class="small" id="pfMail" style="opacity:.6"></p>
+    <div class="askacts">
+      <button class="btn btn-ghost" id="prefsClose">ביטול</button>
+      <button class="btn btn-primary" id="prefsSave">שמירה</button>
+    </div>
   </div>
 </div>
 
@@ -1509,7 +1548,14 @@ function renderChrome(){
   var filled=state.ideas.filter(function(i){return ideaText(i)}).length;
   $("ideasCount").textContent = filled?filled:"";
   $("brandBiz").textContent = profile.business_name||"";
-  if(profile.logo)$("brandLogo").src=profile.logo;
+  var logo=$("brandLogo");
+  if(signedIn()){
+    if(profile.logo){logo.src=profile.logo;logo.hidden=false}
+    else{logo.hidden=true}          /* no logo uploaded: show none, not ours */
+  }else{
+    logo.hidden=false;              /* the shared-link board keeps the house mark */
+  }
+  document.querySelector(".brand .sub").classList.toggle("nologo",signedIn()&&!profile.logo);
   /* the board toggle is meaningless on a phone */
   $("vCal").hidden = mobile();
   $("mName").textContent=MONTHS[cursor.getMonth()];
@@ -2415,6 +2461,7 @@ $("mPrint").onclick=function(){
 document.addEventListener("keydown",function(e){
   if(e.key==="Escape"){
     if(!$("onboard").hidden)return;
+    if(!$("prefs").hidden){$("prefs").hidden=true;return}
     if(!$("types").hidden){$("types").hidden=true;return}
     if(!$("hist").hidden){$("hist").hidden=true;return}
     if(!$("sync").hidden){closeSync();return}
@@ -2477,7 +2524,8 @@ function sessionFrom(d){
     access_token:d.access_token,
     refresh_token:d.refresh_token,
     expires_at:Date.now()+((d.expires_in||3600)*1000),
-    user_id:(d.user&&d.user.id)||null
+    user_id:(d.user&&d.user.id)||null,
+    email:(d.user&&d.user.email)||(SESS&&SESS.email)||null
   };
 }
 /* tokens last an hour; refresh a little early so a long editing session
@@ -2585,6 +2633,7 @@ function paintSync(){
   /* Sync is meant to be invisible. Only a genuine failure is worth a word,
      and that goes in the menu rather than across the toolbar. */
   $("mAccount").hidden = signedIn();
+  $("mPrefs").hidden = !signedIn();
   var m=$("mSync");
   m.classList.toggle("warn",syncStatus==="err");
   m.title=syncStatus==="err"?"הסנכרון נתקע — לחצי לפרטים":"";
@@ -3081,7 +3130,7 @@ $("syncStop").onclick=function(){
    for hours. A tiny version file fetched with no-store settles who is stale;
    when the board is idle it refreshes itself, and when she is mid-edit it
    waits and offers a button instead of yanking the page away. */
-var BUILD="240d4a5b";
+var BUILD="db94e1b0";
 function versionCheck(){
   if(!/^https?:/.test(location.protocol))return;
   fetch("version.json?t="+Date.now(),{cache:"no-store"})
@@ -3265,6 +3314,82 @@ $("doLogin").onclick=function(){
 };
 $("liPass").addEventListener("keydown",function(e){if(e.key==="Enter")$("doLogin").onclick()});
 $("suPass").addEventListener("keydown",function(e){if(e.key==="Enter")$("doSignup").onclick()});
+
+/* one reader for both logo drop zones */
+function makeLogoPicker(dropId,fileId,prevId,imgId,rmId,onPick){
+  function read(file){
+    if(!file||!/^image\//.test(file.type)){toast("צריך קובץ תמונה");return}
+    var fr=new FileReader();
+    fr.onload=function(){
+      var img=new Image();
+      img.onload=function(){
+        var maxW=420,maxH=140,w=img.width,h=img.height;
+        var r=Math.min(maxW/w,maxH/h,1);
+        w=Math.round(w*r);h=Math.round(h*r);
+        var cv=document.createElement("canvas");cv.width=w;cv.height=h;
+        cv.getContext("2d").drawImage(img,0,0,w,h);
+        onPick(cv.toDataURL("image/png"));
+      };
+      img.onerror=function(){toast("לא הצלחתי לקרוא את הקובץ")};
+      img.src=fr.result;
+    };
+    fr.readAsDataURL(file);
+  }
+  $(fileId).addEventListener("change",function(e){read(e.target.files[0]);e.target.value=""});
+  ["dragenter","dragover"].forEach(function(t){
+    $(dropId).addEventListener(t,function(e){e.preventDefault();$(dropId).classList.add("over")});
+  });
+  ["dragleave","drop"].forEach(function(t){
+    $(dropId).addEventListener(t,function(e){e.preventDefault();$(dropId).classList.remove("over")});
+  });
+  $(dropId).addEventListener("drop",function(e){
+    if(e.dataTransfer&&e.dataTransfer.files[0])read(e.dataTransfer.files[0]);
+  });
+  $(rmId).onclick=function(){onPick("")};
+}
+
+var prefsLogo="";
+function paintPrefsLogo(){
+  if(prefsLogo){
+    $("pfLogoImg").src=prefsLogo;
+    $("pfLogoPrev").hidden=false;$("pfLogoDrop").hidden=true;
+  }else{
+    $("pfLogoPrev").hidden=true;$("pfLogoDrop").hidden=false;
+  }
+}
+makeLogoPicker("pfLogoDrop","pfLogoFile","pfLogoPrev","pfLogoImg","pfLogoRm",function(url){
+  prefsLogo=url;paintPrefsLogo();
+});
+
+function openPrefs(){
+  $("pfName").value=profile.full_name||"";
+  $("pfBiz").value=profile.business_name||"";
+  prefsLogo=profile.logo||"";
+  paintPrefsLogo();
+  $("pfMail").textContent=(SESS&&SESS.email)?("מחוברת כ-"+SESS.email):"";
+  $("prefs").hidden=false;
+}
+$("mPrefs").onclick=openPrefs;
+$("prefsClose").onclick=function(){$("prefs").hidden=true};
+$("prefs").onclick=function(e){if(e.target===$("prefs"))$("prefs").hidden=true};
+$("prefsSave").onclick=function(){
+  var biz=$("pfBiz").value.trim();
+  if(!biz){toast("שם העסק לא יכול להישאר ריק");return}
+  var btn=this;btn.disabled=true;btn.textContent="שומר…";
+  saveProfile({
+    full_name:$("pfName").value.trim(),
+    business_name:biz,
+    logo:prefsLogo||""
+  }).then(function(){
+    btn.disabled=false;btn.textContent="שמירה";
+    $("prefs").hidden=true;
+    renderChrome();
+    toast("ההגדרות נשמרו");
+  }).catch(function(){
+    btn.disabled=false;btn.textContent="שמירה";
+    toast("השמירה נכשלה — נסי שוב");
+  });
+};
 
 function signOut(){
   ask({title:"לצאת מהחשבון?",
