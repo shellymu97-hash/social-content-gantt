@@ -3867,7 +3867,7 @@ $("syncStop").onclick=function(){
    for hours. A tiny version file fetched with no-store settles who is stale;
    when the board is idle it refreshes itself, and when she is mid-edit it
    waits and offers a button instead of yanking the page away. */
-var BUILD="f3713009";
+var BUILD="da402802";
 function versionCheck(){
   if(!/^https?:/.test(location.protocol))return;
   fetch("version.json?t="+Date.now(),{cache:"no-store"})
@@ -4032,7 +4032,11 @@ $("doSignup").onclick=function(){
   }).catch(function(err){
     gateBusy(false,btn);
     var m=String(err.message||"");
-    if(/already/i.test(m))gateErr("כבר יש חשבון עם האימייל הזה. נסי להיכנס.");
+    /* the allowlist lives in the database, so a closed signup comes back as a
+       raw server error — say it in words instead of showing the error code */
+    if(/signup_not_allowed/i.test(m))
+      gateErr("ההרשמה סגורה כרגע. אם קיבלת הזמנה, הירשמי עם אותו אימייל בדיוק.");
+    else if(/already/i.test(m))gateErr("כבר יש חשבון עם האימייל הזה. נסי להיכנס.");
     else gateErr(m||"ההרשמה נכשלה, נסי שוב");
   });
 };
