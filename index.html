@@ -13,9 +13,9 @@
 
 :root{
   color-scheme:light;
-  --bg:#FAFCFC; --surface:#FFFFFF; --surface-2:#F4F8F8;
-  --ink:#0F1E1D; --ink-2:#41544F; --muted:#6B807E; --faint:#9BADAB;
-  --line:#E3ECEB; --line-2:#EFF4F4;
+  --bg:#F2F6F5; --surface:#FCFEFD; --surface-2:#EDF3F2;
+  --ink:#0F1E1D; --ink-2:#41544F; --muted:#677C7A; --faint:#93A6A4;
+  --line:#DCE7E5; --line-2:#E9F0EF;
   --brand:#0E9E9B; --brand-deep:#0A7B79; --brand-glow:#0FEFE9; --brand-tint:#E7F7F6;
 
   /* pastel content-type palette */
@@ -44,7 +44,15 @@
 [hidden]{display:none!important}
 html,body{height:100%}
 body{
-  margin:0;background:var(--bg);color:var(--ink);
+  margin:0;color:var(--ink);
+  /* three barely-there washes over a soft ground, so the page reads as paper
+     rather than a blank screen — light enough not to touch legibility */
+  background:
+    radial-gradient(1100px 620px at 88% -8%,  rgba(15,239,233,.09), transparent 62%),
+    radial-gradient(900px 560px at 4% 108%,   rgba(222,147,174,.08), transparent 60%),
+    radial-gradient(760px 520px at 52% 42%,   rgba(154,129,200,.045), transparent 66%),
+    var(--bg);
+  background-attachment:fixed;
   font-family:var(--font);font-weight:400;
   font-size:15px;line-height:1.55;
   -webkit-font-smoothing:antialiased;
@@ -58,23 +66,19 @@ button{cursor:pointer;background:none;border:0;padding:0}
 /* ───────── shell ───────── */
 .app{display:flex;flex-direction:column;height:100dvh}
 .credit{
-  position:fixed;inset-inline-start:0;bottom:0;z-index:6;pointer-events:none;
-  display:flex;align-items:center;gap:6px;
-  padding:6px 14px;border-start-end-radius:10px;
-  background:rgba(255,255,255,.9);backdrop-filter:blur(4px);
-  border-top:1px solid var(--line);border-inline-end:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  margin-top:28px;padding:18px 14px 10px;
+  border-top:1px solid var(--line-2);
   font-size:11.5px;color:var(--faint);
 }
-.credit a{color:var(--brand-deep);font-weight:700;text-decoration:none;pointer-events:auto}
+.credit a{color:var(--brand-deep);font-weight:700;text-decoration:none}
 .credit a:hover{text-decoration:underline}
 .credit span{opacity:.5}
-@media (max-width:760px){
-  .credit{position:static;justify-content:center;border-radius:0;border-inline-end:0;background:none}
-}
 
 .topbar{
+  background:rgba(252,254,253,.86);backdrop-filter:blur(8px);
   display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;
-  padding:12px 22px;background:var(--surface);
+  padding:12px 22px;
   border-bottom:1px solid var(--line);
 }
 .brand{display:flex;align-items:center;gap:11px;min-width:0}
@@ -130,7 +134,8 @@ button{cursor:pointer;background:none;border:0;padding:0}
 /* ───────── toolbar ───────── */
 .toolbar{
   display:flex;align-items:center;gap:10px;flex-wrap:wrap;
-  padding:11px 22px;background:var(--surface);border-bottom:1px solid var(--line);
+  padding:11px 22px;border-bottom:1px solid var(--line);
+  background:rgba(252,254,253,.72);backdrop-filter:blur(8px);
 }
 .legend{display:flex;gap:7px;flex-wrap:wrap}
 .chip{
@@ -183,7 +188,8 @@ button{cursor:pointer;background:none;border:0;padding:0}
     repeat(2, minmax(150px, .7fr));
 }
 .weekhead{
-  position:sticky;top:0;z-index:5;background:var(--bg);
+  position:sticky;top:0;z-index:5;
+  background:linear-gradient(var(--bg) 72%,rgba(242,246,245,0));
   padding:12px 0 8px;
 }
 .weekhead div{
@@ -195,6 +201,7 @@ button{cursor:pointer;background:none;border:0;padding:0}
 
 .cell{
   background:var(--surface);border:1px solid var(--line);border-radius:var(--r-m);
+  box-shadow:0 1px 2px rgba(15,30,29,.03);
   min-height:132px;padding:9px 9px 11px;display:flex;flex-direction:column;gap:6px;
   transition:border-color .15s,background .15s;
 }
@@ -202,7 +209,7 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .board.full .cellhead{margin-bottom:2px}
 .board.full .cell{min-height:150px}
 .cell.pad{background:transparent;border-color:transparent;box-shadow:none}
-.cell.we{background:#FCFDFD}
+.cell.we{background:rgba(252,254,253,.6)}
 .cell.hol{background:var(--hol-bg)}
 .cell.drop{border-color:var(--brand);background:var(--brand-tint);border-style:dashed}
 .cell.today{border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
@@ -519,6 +526,24 @@ input[type=date].inp{font-variant-numeric:tabular-nums;max-width:190px}
   background:var(--surface-2);border-radius:var(--r-s);padding:9px;
   border:1px solid transparent;transition:.15s;
 }
+.slideshot{
+  position:relative;width:56px;height:56px;flex:none;margin-top:2px;
+  border-radius:8px;overflow:hidden;cursor:pointer;
+  display:grid;place-items:center;
+  background:#fff;border:1.5px dashed var(--line);color:var(--faint);transition:.15s;
+}
+.slideshot:hover{border-color:var(--c);color:var(--c)}
+.slideshot.has{border-style:solid;border-color:var(--cln,var(--line))}
+.slideshot img{width:100%;height:100%;object-fit:cover;display:block}
+.slideshot svg{width:18px;height:18px}
+.slideshot .shotin{position:absolute;inset:0;opacity:0;cursor:pointer}
+.slideshot .shotrm{
+  position:absolute;top:2px;inset-inline-end:2px;
+  width:18px;height:18px;border-radius:5px;display:grid;place-items:center;
+  background:rgba(255,255,255,.92);color:#C0392B;opacity:0;transition:.15s;
+}
+.slideshot:hover .shotrm{opacity:1}
+.slideshot .shotrm svg{width:10px;height:10px}
 .slide:focus-within{background:var(--surface);border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-tint)}
 .slide .num{
   width:24px;height:24px;flex:none;border-radius:7px;display:grid;place-items:center;
@@ -553,6 +578,29 @@ input[type=date].inp{font-variant-numeric:tabular-nums;max-width:190px}
 .imgdrop:hover,.imgdrop.over{border-color:var(--brand);background:var(--brand-tint);color:var(--brand-deep)}
 .imgdrop svg{width:20px;height:20px;opacity:.6}
 .imgdrop input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.viddrop{
+  position:relative;border:1.5px dashed var(--line);border-radius:var(--r-m);
+  padding:18px;text-align:center;color:var(--muted);font-size:13.5px;
+  display:flex;flex-direction:column;align-items:center;gap:7px;transition:.15s;
+}
+.viddrop:hover,.viddrop.over{border-color:var(--brand);background:var(--brand-tint);color:var(--brand-deep)}
+.viddrop svg{width:20px;height:20px;opacity:.6}
+.viddrop input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.vidprev{position:relative;border-radius:var(--r-m);overflow:hidden;background:#0F1E1D;line-height:0}
+.vidprev video{width:100%;max-height:300px;display:block}
+.vidprev button{
+  position:absolute;top:8px;inset-inline-end:8px;
+  width:28px;height:28px;border-radius:8px;display:grid;place-items:center;
+  background:rgba(255,255,255,.94);color:#C0392B;box-shadow:var(--shadow-s);
+}
+.vidprev button svg{width:13px;height:13px}
+.vidbadge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:1.5px 7px;border-radius:99px;
+  background:rgba(15,30,29,.72);color:#fff;font-size:10px;font-weight:700;
+}
+.vidbadge svg{width:9px;height:9px}
+
 .gallery{display:flex;flex-direction:column;gap:8px}
 .gallery:empty{display:none}
 .gitem{
@@ -581,11 +629,26 @@ input[type=date].inp{font-variant-numeric:tabular-nums;max-width:190px}
 .card figure{position:relative}
 .fcount{
   position:absolute;top:6px;inset-inline-end:6px;
-  min-width:20px;height:20px;padding:0 6px;border-radius:99px;
+  min-width:20px;height:20px;padding:0 7px;border-radius:99px;
   background:rgba(15,30,29,.72);color:#fff;
   font-size:11px;font-weight:700;line-height:20px;text-align:center;
-  font-variant-numeric:tabular-nums;
+  font-variant-numeric:tabular-nums;pointer-events:none;
 }
+.farrow{
+  position:absolute;top:50%;transform:translateY(-50%);
+  width:26px;height:26px;border-radius:99px;display:grid;place-items:center;
+  background:rgba(255,255,255,.9);color:var(--ink-2);
+  box-shadow:0 1px 4px rgba(15,30,29,.2);
+  opacity:0;transition:opacity .15s,background .15s;
+}
+.farrow.prev{inset-inline-start:6px}
+.farrow.next{inset-inline-end:6px}
+.farrow:hover{background:#fff;color:var(--brand-deep)}
+.farrow svg{width:13px;height:13px}
+figure:hover .farrow{opacity:1}
+@media (hover:none){.farrow{opacity:.85}}
+.lfig .farrow{width:30px;height:30px}
+.lfig .farrow svg{width:15px;height:15px}
 
 .count{font-size:11.5px;color:var(--faint);text-align:end;font-variant-numeric:tabular-nums}
 .count.over{color:#C0392B}
@@ -998,6 +1061,10 @@ input[type=date].inp{font-variant-numeric:tabular-nums;max-width:190px}
       </div>
       <div class="ideagrid" id="ideaGrid"></div>
     </div>
+    <footer class="credit">
+      כל הקרדיט ל<a href="https://shellystudio.co.il" target="_blank" rel="noopener">shelly.webdesign</a>
+      <span>·</span> 2026
+    </footer>
   </div>
 </div>
 
@@ -1071,6 +1138,23 @@ input[type=date].inp{font-variant-numeric:tabular-nums;max-width:190px}
       <label for="fCaption">תיאור הפוסט <span class="hint">— הקאפשן שעולה בפועל</span></label>
       <textarea class="ta" id="fCaption" rows="5" placeholder="הטקסט שילווה את הפוסט…"></textarea>
       <div class="count" id="capCount">0 / 2,200</div>
+    </div>
+
+    <div class="field" id="videoField" hidden>
+      <span class="flabel">סרטון <span class="hint">— הקובץ נשמר בענן, לא בתוך הלוח</span></span>
+      <div class="vidbox" id="vidBox">
+        <div class="viddrop" id="vidDrop">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
+          <span id="vidDropTxt">גררי לכאן סרטון או לחצי לבחירה</span>
+          <input type="file" id="vidFile" accept="video/*" aria-label="העלאת סרטון">
+        </div>
+        <div class="vidprev" id="vidPrev" hidden>
+          <video id="vidEl" controls preload="metadata" playsinline></video>
+          <button id="vidRm" aria-label="הסרת הסרטון">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+      </div>
     </div>
 
     <div class="field">
@@ -1178,11 +1262,6 @@ input[type=date].inp{font-variant-numeric:tabular-nums;max-width:190px}
     <p class="gateerr" id="gateErr" hidden></p>
   </div>
 </div>
-
-<footer class="credit">
-  כל הקרדיט ל<a href="https://shellystudio.co.il" target="_blank" rel="noopener">shelly.webdesign</a>
-  <span>·</span> 2026
-</footer>
 
 <div class="ask" id="prefs" hidden role="dialog" aria-modal="true" aria-labelledby="prefsT">
   <div class="askbox syncbox">
@@ -1703,17 +1782,45 @@ function sectionEl(label,text){
   sec.appendChild(lb);sec.appendChild(tx);
   return sec;
 }
+/* Browsing the frames on the board itself: arrows step through without
+   opening the card, and never start a drag. */
 function figureEl(s){
-  var imgs=imagesOf(s);
+  var imgs=imagesOf(s).filter(Boolean);
   var fig=el("figure");
   var img=new Image();
   img.src=imgs[0];img.alt="";img.draggable=false;
   fig.appendChild(img);
+
   if(imgs.length>1){
-    var n=el("span","fcount");
-    n.textContent=imgs.length;
-    n.title=imgs.length+" תמונות";
-    fig.appendChild(n);
+    var at=0;
+    var count=el("span","fcount");
+    var paint=function(){
+      img.src=imgs[at];
+      count.textContent=(at+1)+"/"+imgs.length;
+    };
+    var step=function(d){
+      return function(e){
+        e.preventDefault();e.stopPropagation();
+        at=(at+d+imgs.length)%imgs.length;
+        paint();
+      };
+    };
+    var mk=function(cls,path,label){
+      var b=el("button","farrow "+cls);
+      b.type="button";
+      b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="'+path+'"/></svg>';
+      b.setAttribute("aria-label",label);
+      /* the card listens on pointerdown to start a drag — stop it here */
+      b.addEventListener("pointerdown",function(e){e.stopPropagation()});
+      return b;
+    };
+    var prev=mk("prev","M15 18l-6-6 6-6","התמונה הקודמת");
+    var next=mk("next","M9 18l6-6-6-6","התמונה הבאה");
+    prev.addEventListener("click",step(-1));
+    next.addEventListener("click",step(1));
+    fig.appendChild(prev);fig.appendChild(next);
+    fig.appendChild(count);
+    paint();
   }
   return fig;
 }
@@ -1784,6 +1891,11 @@ function cardEl(s){
 
   if(!dense){
     var bd=el("div","badges");
+    if(s.video&&s.video.path){
+      var vb=el("span","vidbadge");
+      vb.innerHTML='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>סרטון';
+      bd.appendChild(vb);
+    }
     if(imagesOf(s).length){
       var im=el("span","hasimg");
       im.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg>';
@@ -2200,11 +2312,45 @@ function fillEditor(s){
 
 function renderSlides(s,t){
   if(!Array.isArray(s.slides)||!s.slides.length)s.slides=["","",""];
+  if(!Array.isArray(s.images))s.images=[];
   var w=$("fSlides");w.textContent="";
   s.slides.forEach(function(txt,i){
     var row=el("div","slide");
     row.style.setProperty("--c",t.c);row.style.setProperty("--ct",t.tx);
     var n=el("span","num");n.textContent=i+1;
+
+    /* the frame for this slide sits next to its text — a carousel is planned
+       as pairs, not as a pile of images with a separate pile of captions */
+    var shot=el("label","slideshot"+(s.images[i]?" has":""));
+    shot.title=s.images[i]?"החלפת התמונה של שקופית "+(i+1):"תמונה לשקופית "+(i+1);
+    if(s.images[i]){
+      var im=new Image();im.src=s.images[i];im.alt="";im.draggable=false;
+      shot.appendChild(im);
+      var rmi=el("button","shotrm");rmi.type="button";
+      rmi.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+      rmi.setAttribute("aria-label","הסרת התמונה משקופית "+(i+1));
+      rmi.onclick=function(e){
+        e.preventDefault();e.stopPropagation();
+        var c=cur();if(!c)return;
+        c.images[i]="";
+        while(c.images.length&&!c.images[c.images.length-1])c.images.pop();
+        save();renderSlides(c,typeOf(c.type));refreshCard(c);
+      };
+      shot.appendChild(rmi);
+    }else{
+      shot.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg>';
+    }
+    var fin=document.createElement("input");
+    fin.type="file";fin.accept="image/*";fin.className="shotin";
+    fin.setAttribute("aria-label","תמונה לשקופית "+(i+1));
+    fin.addEventListener("change",function(e){
+      var f=e.target.files[0];e.target.value="";
+      if(!f)return;
+      slotImage(f,i);
+    });
+    shot.appendChild(fin);
+    row.appendChild(shot);
+
     var ta=el("textarea");
     ta.value=txt;ta.rows=2;
     ta.placeholder=i===0?"שקופית 1 — ההוק":"שקופית "+(i+1);
@@ -2222,7 +2368,8 @@ function renderSlides(s,t){
       if(!c.slides.length)c.slides=[""];
       save();renderSlides(c,t);
     };
-    row.appendChild(n);row.appendChild(ta);row.appendChild(rm);
+    row.insertBefore(n,row.firstChild);
+    row.appendChild(ta);row.appendChild(rm);
     w.appendChild(row);
     autoGrow(ta);
   });
@@ -2376,6 +2523,30 @@ function readImage(file,done){
   };
   fr.readAsDataURL(file);
 }
+function slotImage(file,index){
+  if(!file||!/^image\//.test(file.type)){toast("צריך קובץ תמונה");return}
+  var fr=new FileReader();
+  fr.onload=function(){
+    var img=new Image();
+    img.onload=function(){
+      var c=cur();if(!c)return;
+      var max=1100,w=img.width,h=img.height;
+      if(w>max||h>max){var r=Math.min(max/w,max/h);w=Math.round(w*r);h=Math.round(h*r)}
+      var cv=document.createElement("canvas");cv.width=w;cv.height=h;
+      var ctx=cv.getContext("2d");
+      ctx.fillStyle="#fff";ctx.fillRect(0,0,w,h);
+      ctx.drawImage(img,0,0,w,h);
+      if(!Array.isArray(c.images))c.images=[];
+      while(c.images.length<index)c.images.push("");
+      c.images[index]=cv.toDataURL("image/jpeg",.78);
+      save();renderSlides(c,typeOf(c.type));refreshCard(c);
+    };
+    img.onerror=function(){toast("לא הצלחתי לקרוא את הקובץ")};
+    img.src=fr.result;
+  };
+  fr.readAsDataURL(file);
+}
+
 /* files arrive together, but each has to finish decoding before the next is
    appended or the cap check races itself */
 function readImages(list){
@@ -2399,8 +2570,14 @@ function readImages(list){
 $("fImg").addEventListener("change",function(e){readImages(e.target.files);e.target.value=""});
 
 function renderGallery(s){
-  var g=$("gallery"),imgs=imagesOf(s),lim=maxImages(s.type);
+  var g=$("gallery"),imgs=imagesOf(s),lim=maxImages(s.type),t=typeOf(s.type);
   g.textContent="";
+  if(t.slides){
+    /* the frames live beside their slides instead */
+    $("imgDrop").hidden=true;
+    $("imgHint").textContent="— התמונות נבחרות ליד כל שקופית למעלה";
+    return;
+  }
   $("imgHint").textContent=lim>1
     ? "— עד "+lim+" תמונות, לפי סדר השקופיות"
     : "";
@@ -2663,6 +2840,47 @@ function ensureFreshToken(){
     if(ns)saveSession(ns);
     return SESS;
   }).catch(function(){saveSession(null);return null});
+}
+
+/* A clip is far too heavy for the plan JSON, so only its path travels there.
+   The file sits in a private bucket under her own user folder, and playback
+   goes through a short-lived signed link. */
+var signedCache={};
+function videoUrl(path){
+  var hit=signedCache[path];
+  if(hit&&hit.until>Date.now())return Promise.resolve(hit.url);
+  return ensureFreshToken().then(function(){
+    return authFetch("/storage/v1/object/sign/media/"+path,{
+      method:"POST",body:JSON.stringify({expiresIn:3600})
+    });
+  }).then(function(d){
+    var url=SUPA_URL+"/storage/v1"+d.signedURL;
+    signedCache[path]={url:url,until:Date.now()+50*60*1000};
+    return url;
+  });
+}
+function uploadVideo(file){
+  if(!signedIn())return Promise.reject(new Error("צריך חשבון כדי לצרף סרטון"));
+  if(file.size>100*1024*1024)return Promise.reject(new Error("הסרטון גדול מ-100MB"));
+  var name=(file.name||"clip").replace(/[^\w.\-]+/g,"_").slice(-40);
+  var path=SESS.user_id+"/"+Date.now()+"-"+name;
+  return ensureFreshToken().then(function(){
+    return fetch(SUPA_URL+"/storage/v1/object/media/"+path,{
+      method:"POST",
+      headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SESS.access_token,
+               "Content-Type":file.type||"video/mp4","x-upsert":"true"},
+      body:file
+    });
+  }).then(function(r){
+    if(!r.ok)return r.text().then(function(t){throw new Error(t||"ההעלאה נכשלה")});
+    return path;
+  });
+}
+function deleteVideo(path){
+  if(!signedIn()||!path)return Promise.resolve();
+  return ensureFreshToken().then(function(){
+    return authFetch("/storage/v1/object/media/"+path,{method:"DELETE"});
+  }).catch(function(){});
 }
 
 function loadProfile(){
@@ -3282,7 +3500,7 @@ $("syncStop").onclick=function(){
    for hours. A tiny version file fetched with no-store settles who is stale;
    when the board is idle it refreshes itself, and when she is mid-edit it
    waits and offers a button instead of yanking the page away. */
-var BUILD="98bb400d";
+var BUILD="4e160212";
 function versionCheck(){
   if(!/^https?:/.test(location.protocol))return;
   fetch("version.json?t="+Date.now(),{cache:"no-store"})
