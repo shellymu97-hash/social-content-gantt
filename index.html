@@ -196,7 +196,7 @@ button{cursor:pointer;background:none;border:0;padding:0}
   font-size:12px;font-weight:700;color:var(--faint);
   letter-spacing:.06em;text-align:center;
 }
-.weekhead div.we{color:var(--brand)}
+.weekhead div.we{color:var(--muted)}
 
 
 .cell{
@@ -212,7 +212,7 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .cell.we{background:rgba(252,254,253,.6)}
 .cell.hol{background:var(--hol-bg)}
 .cell.drop{border-color:var(--brand);background:var(--brand-tint);border-style:dashed}
-.cell.today{border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+.cell.today{border-color:var(--chrome);box-shadow:0 0 0 1px var(--chrome)}
 
 .cellhead{display:flex;align-items:flex-start;gap:6px;min-height:22px}
 .daynum{
@@ -220,7 +220,7 @@ button{cursor:pointer;background:none;border:0;padding:0}
   font-variant-numeric:tabular-nums;width:24px;height:22px;flex:none;
   display:grid;place-items:center;border-radius:7px;
 }
-.cell.today .daynum{background:var(--brand);color:#fff}
+.cell.today .daynum{background:var(--chrome);color:#fff}
 .cell.pad .daynum{color:#C6D3D2}
 
 .hols{
@@ -234,11 +234,11 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .addbtn{
   margin-inline-start:auto;width:24px;height:24px;border-radius:8px;flex:none;
   display:grid;place-items:center;
-  color:var(--brand-deep);background:var(--brand-tint);
-  border:1px solid #CDEBEA;transition:.15s;
+  color:var(--chrome);background:var(--chrome-soft);
+  border:1px solid var(--chrome-line);transition:.15s;
 }
-.cell:hover .addbtn{background:var(--brand);color:#fff;border-color:var(--brand)}
-.addbtn:hover{background:var(--brand-deep)!important;color:#fff;border-color:var(--brand-deep)}
+.cell:hover .addbtn{background:var(--chrome);color:#fff;border-color:var(--chrome)}
+.addbtn:hover{background:var(--ink)!important;color:#fff;border-color:var(--ink)}
 .addbtn svg{width:14px;height:14px;stroke-width:2.8}
 
 .card{
@@ -246,7 +246,7 @@ button{cursor:pointer;background:none;border:0;padding:0}
   position:relative;text-align:start;width:100%;
   background:var(--cbg);border-radius:var(--r-s);
   padding:7px 9px 7px 8px;
-  border-inline-start:3px solid var(--c);
+  border-inline-start:4px solid var(--c);
   display:flex;flex-direction:column;gap:3px;
   transition:transform .12s,box-shadow .15s,opacity .15s;
   touch-action:none;
@@ -275,10 +275,10 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .card figure{margin:0;border-radius:7px;overflow:hidden;background:rgba(255,255,255,.7);line-height:0}
 .card figure img{width:100%;display:block;max-height:170px;object-fit:cover}
 .card .sec{display:flex;flex-direction:column;gap:2px;padding-top:1px}
-.card .sec+.sec{border-top:1px solid var(--cln);padding-top:6px}
+.card .sec+.sec{border-top:1px solid rgba(0,0,0,.14);padding-top:7px}
 .card .sec .lb{
   font-size:10.5px;font-weight:700;letter-spacing:.07em;
-  color:var(--ct);opacity:1;
+  color:var(--chrome);opacity:1;
 }
 .card .sec .tx{
   font-size:12.8px;line-height:1.55;color:var(--ink);
@@ -321,14 +321,14 @@ button{cursor:pointer;background:none;border:0;padding:0}
   padding:16px 2px 7px;font-size:12.5px;color:var(--faint);
 }
 .list .dayrow b{font-size:15px;color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
-.list .dayrow.is-today b{color:var(--brand-deep)}
+.list .dayrow.is-today b{color:var(--chrome)}
 .list .dayrow .line{flex:1;height:1px;background:var(--line-2)}
 .list .dayrow .dname{color:var(--faint)}
 .dayblock{display:flex;flex-direction:column}
 .dayblock .dayrow{padding:14px 2px 6px}
-.dayblock.we .dayrow b{color:var(--brand)}
+.dayblock.we .dayrow b{color:var(--muted)}
 .dayblock.is-today .dayrow b{
-  background:var(--brand);color:#fff;border-radius:8px;
+  background:var(--chrome);color:#fff;border-radius:8px;
   min-width:26px;text-align:center;padding:1px 6px;
 }
 .dayblock.empty .dayrow{opacity:.55}
@@ -338,10 +338,10 @@ button{cursor:pointer;background:none;border:0;padding:0}
 }
 .dayadd{
   width:28px;height:28px;flex:none;border-radius:9px;display:grid;place-items:center;
-  color:var(--brand-deep);background:var(--brand-tint);
-  border:1px solid #CDEBEA;transition:.15s;
+  color:var(--chrome);background:var(--chrome-soft);
+  border:1px solid var(--chrome-line);transition:.15s;
 }
-.dayadd:hover{background:var(--brand-deep);color:#fff;border-color:var(--brand-deep)}
+.dayadd:hover{background:var(--ink);color:#fff;border-color:var(--ink)}
 .dayadd svg{width:15px;height:15px;stroke-width:2.8}
 
 .goal{
@@ -380,8 +380,8 @@ button{cursor:pointer;background:none;border:0;padding:0}
 }
 .lsecs{display:flex;flex-direction:column;gap:7px}
 .lsecs .sec{display:flex;flex-direction:column;gap:2px}
-.lsecs .sec+.sec{border-top:1px solid var(--cln);padding-top:7px}
-.lsecs .sec .lb{font-size:10px;font-weight:700;letter-spacing:.07em;color:var(--ct);opacity:.9}
+.lsecs .sec+.sec{border-top:1px solid rgba(0,0,0,.12);padding-top:8px}
+.lsecs .sec .lb{font-size:10.5px;font-weight:700;letter-spacing:.07em;color:var(--chrome)}
 .lsecs .sec .tx{font-size:13.5px;line-height:1.65;color:var(--ink-2);white-space:pre-wrap;overflow-wrap:anywhere}
 .lsecs .sl{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px}
 .lsecs .sl li{display:flex;gap:8px;font-size:13.5px;line-height:1.6;color:var(--ink-2);overflow-wrap:anywhere}
@@ -1492,7 +1492,7 @@ function readable(base,bg){
    pulls the colours together, which is what keeps the types apart. */
 function swatchSet(base,paper,ink){
   var bg=base,guard=0;
-  while(contrast(ink,bg)<5.5&&guard++<40)bg=mix(bg,paper,.10);
+  while(contrast(ink,bg)<6.2&&guard++<40)bg=mix(bg,paper,.10);
   return {c:base,bg:bg,ln:mix(base,paper,.20),tx:readable(base,bg)};
 }
 
@@ -1509,8 +1509,8 @@ var THEMES=[
   {id:"forest",name:"יער קיץ",
    paper:"#FFFEFB",ground:"#FAF9F1",ink:"#22271F",brand:"#5F8451",glow:"#B6BA8A",
    washes:[["#769967",.12],["#D08E9F",.10],["#E3DEA1",.12]],
-   swatches:["#E3DEA1","#769967","#BA6483","#CEBBD9","#E6A199",
-             "#B6BA8A","#D08E9F","#4E7F72","#E6D595","#8A9683"]},
+   swatches:["#E3DEA1","#D08E9F","#BA6483","#CEBBD9","#E6A199",
+             "#B6BA8A","#769967","#4E7F72","#E6D595","#8A9683"]},
 
   {id:"espresso",name:"אספרסו",
    paper:"#FFFDFA",ground:"#FAF4EC",ink:"#2A1C15",brand:"#8A5C3E",glow:"#CBB4A0",
@@ -1571,6 +1571,11 @@ function applyTheme(id){
   r.setProperty("--brand-deep",mix(th.brand,"#000000",.22));
   r.setProperty("--brand-glow",th.glow);
   r.setProperty("--brand-tint",mix(th.brand,th.paper,.88));
+  /* calendar furniture — today, the add button, the frame — reads as chrome,
+     not as content, so it stays a neutral grey in every scheme */
+  r.setProperty("--chrome",mix(th.ink,th.paper,.22));
+  r.setProperty("--chrome-soft",mix(th.ink,th.paper,.86));
+  r.setProperty("--chrome-line",mix(th.ink,th.paper,.72));
   PALETTE.forEach(function(pl,i){
     var k=["carousel","broll","reel","project"][i];
     if(!k)return;
@@ -3745,7 +3750,7 @@ $("syncStop").onclick=function(){
    for hours. A tiny version file fetched with no-store settles who is stale;
    when the board is idle it refreshes itself, and when she is mid-edit it
    waits and offers a button instead of yanking the page away. */
-var BUILD="159870b4";
+var BUILD="7294a242";
 function versionCheck(){
   if(!/^https?:/.test(location.protocol))return;
   fetch("version.json?t="+Date.now(),{cache:"no-store"})
