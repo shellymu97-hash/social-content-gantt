@@ -1472,31 +1472,54 @@ function readable(base,bg){
   for(var i=0;i<14&&contrast(c,bg)<4.5;i++)c=mix(c,"#000000",.12);
   return c;
 }
-function swatchSet(base,paper){
-  var bg=mix(base,paper,.86);
-  return {c:base,bg:bg,ln:mix(base,paper,.62),tx:readable(base,bg)};
+/* The fill has to carry the colour, not merely hint at it — a wash at 86%
+   toward paper made every type look the same. These land around a third of
+   the way to the base, which reads as a real colour while text stays legible
+   because the label tone is darkened until it passes contrast. */
+/* How far a fill travels toward paper follows the anchor's own lightness: a
+   dark anchor keeps a deeper fill, a light one lands softer. That is what
+   separates neighbours in a scheme built from a single family of browns. */
+function swatchSet(base,paper,ink){
+  var bg=mix(base,paper,.42+.30*relLum(base));
+  /* the card title is set in the scheme's ink, so no fill may go dark enough
+     to swallow it — lighten until the title clears the contrast bar */
+  for(var i=0;i<12&&contrast(ink,bg)<4.6;i++)bg=mix(bg,paper,.14);
+  return {c:base,bg:bg,ln:mix(base,paper,.22),tx:readable(base,bg)};
 }
 
+/* Each scheme's ten anchors are spread across hue and depth on purpose: four
+   neighbouring browns look identical once tinted, so even the monochrome
+   schemes vary lightness sharply between neighbours. */
 var THEMES=[
   {id:"turquoise",name:"טורקיז",
    paper:"#FCFEFD",ground:"#F2F6F5",ink:"#0F1E1D",brand:"#0E9E9B",glow:"#0FEFE9",
    washes:[["#0FEFE9",.09],["#DE93AE",.08],["#9A81C8",.045]],
-   swatches:["#3A9E9B","#6D94CE","#9A81C8","#DE93AE","#D9A75C","#7FAE85","#E09A8B","#6FB3C9","#B285A8","#8C9AA6"]},
+   swatches:["#12938F","#3C74D0","#8B5FBF","#D4568A","#D98324",
+             "#3E8F52","#E0705A","#3E9CC4","#9A5A93","#6E7F8C"]},
 
   {id:"forest",name:"יער קיץ",
-   paper:"#FDFCF8",ground:"#F4F3EA",ink:"#22271F",brand:"#769967",glow:"#B6BA8A",
-   washes:[["#769967",.10],["#D08E9F",.09],["#E3DEA1",.10]],
-   swatches:["#769967","#BA6483","#D08E9F","#B6BA8A","#E6A199","#CEBBD9","#E6D595","#8FA98C","#C98FA0","#9AA37E"]},
+   paper:"#FDFCF8",ground:"#F3F2E8",ink:"#22271F",brand:"#5F8451",glow:"#B6BA8A",
+   washes:[["#769967",.12],["#D08E9F",.10],["#E3DEA1",.12]],
+   swatches:["#4F7A45","#B44F74","#DCAE2E","#9270C0","#DE6249",
+             "#96A24F","#C46E96","#3F7568","#B07C2E","#6E7C66"]},
 
   {id:"espresso",name:"אספרסו",
-   paper:"#FEFCF8",ground:"#F5EFE7",ink:"#2A1C15",brand:"#9B6F53",glow:"#CBB4A0",
-   washes:[["#9B6F53",.10],["#CBB4A0",.12],["#59392D",.05]],
-   swatches:["#9B6F53","#CBB4A0","#8C7B6A","#B08968","#59392D","#C4A484","#A9836B","#7D6A58","#D0B49A","#6B4F3A"]},
+   paper:"#FEFBF6",ground:"#F3EBE0",ink:"#2A1C15",brand:"#8A5C3E",glow:"#CBB4A0",
+   washes:[["#9B6F53",.13],["#CBB4A0",.14],["#59392D",.07]],
+   swatches:["#7A4D31","#E0BE93","#4A3428","#A87C9A","#7E8B5A",
+             "#C25B45","#66788A","#2E1E16","#EBD08A","#9A6A6A"]},
 
   {id:"fresh",name:"התחלה רעננה",
-   paper:"#FDFDFC",ground:"#F1F3F4",ink:"#1B2A29",brand:"#2A5654",glow:"#99BDC1",
-   washes:[["#99BDC1",.13],["#C8B2CE",.10],["#D5C472",.08]],
-   swatches:["#2A5654","#8A9445","#C8B2CE","#99BDC1","#771C31","#D5C472","#E5D1D1","#5E8A87","#A8B36A","#8898A6"]}
+   paper:"#FDFDFC",ground:"#EFF2F3",ink:"#1B2A29",brand:"#2A5654",glow:"#99BDC1",
+   washes:[["#99BDC1",.15],["#C8B2CE",.12],["#D5C472",.10]],
+   swatches:["#22504E","#8A9445","#AE79BC","#63A3B0","#9E2440",
+             "#C9AC2E","#DA8484","#3F6688","#5E9058","#8A8F99"]},
+
+  {id:"cream",name:"קרם ופחם",
+   paper:"#FBF8F2",ground:"#EDE7DB",ink:"#26251F",brand:"#3F3E39",glow:"#B9B3A7",
+   washes:[["#8A8577",.12],["#C9BFAE",.16],["#3F3E39",.06]],
+   swatches:["#26251F","#B0A594","#D89A3C","#4E7062","#B3524C",
+             "#3F4C60","#EADFC6","#7C5A7E","#96994F","#7E7871"]}
 ];
 
 /* Ten pastel families to draw from when a new content type is added. Each is
@@ -1513,7 +1536,7 @@ function themeById(id){
 }
 function buildPalette(th){
   PALETTE=th.swatches.map(function(base,i){
-    var set=swatchSet(base,th.paper);
+    var set=swatchSet(base,th.paper,th.ink);
     return {key:SWATCH_KEYS[i],name:SWATCH_NAMES[i],c:set.c,bg:set.bg,ln:set.ln,tx:set.tx};
   });
 }
@@ -3708,7 +3731,7 @@ $("syncStop").onclick=function(){
    for hours. A tiny version file fetched with no-store settles who is stale;
    when the board is idle it refreshes itself, and when she is mid-edit it
    waits and offers a button instead of yanking the page away. */
-var BUILD="e7219833";
+var BUILD="5c50b9b6";
 function versionCheck(){
   if(!/^https?:/.test(location.protocol))return;
   fetch("version.json?t="+Date.now(),{cache:"no-store"})
