@@ -76,6 +76,10 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .credit span{opacity:.5}
 
 .topbar{
+  /* backdrop-filter makes this a stacking context, so the menu inside it can
+     never rise above later siblings on its own z-index — the bar itself has
+     to sit above the board, or cards paint over the open menu. */
+  position:relative;z-index:20;
   background:rgba(252,254,253,.86);backdrop-filter:blur(8px);
   display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;
   padding:12px 22px;
@@ -1696,6 +1700,7 @@ var DAYS=["ראשון","שני","שלישי","רביעי","חמישי","שישי
 /* default weekly template: which weekday gets which type */
 var TEMPLATE_DAYS=[0,2,3,4];   /* Sun, Tue, Wed, Thu */
 var KEY="shelly-content-planner-v1";
+var SLIMKEY="shelly-content-planner-slim";   /* local mirror had to drop its frames */
 var CAP_MAX=2200;
 
 var S={};
@@ -1869,18 +1874,48 @@ function load(){
   }catch(e){}
 }
 function snapshot(){return {v:3,months:state.months,ideas:state.ideas,types:state.types,ui:{dense:dense,theme:theme.id}}}
+/* how many frames a snapshot carries — used to tell a complete copy from a
+   local mirror that had to drop its images to fit */
+function mediaCount(snap){
+  var n=0,k,a,i;
+  for(k in (snap.months||{})){
+    a=(snap.months[k]&&snap.months[k].slots)||[];
+    for(i=0;i<a.length;i++)n+=((a[i].images||[]).filter(Boolean)).length;
+  }
+  return n;
+}
+function stripImages(snap){
+  var out=JSON.parse(JSON.stringify(snap)),k,a,i;
+  for(k in (out.months||{})){
+    a=(out.months[k]&&out.months[k].slots)||[];
+    for(i=0;i<a.length;i++)a[i].images=[];
+  }
+  return out;
+}
 var saveTimer;
 function saveLocal(){
   clearTimeout(saveTimer);
   saveTimer=setTimeout(function(){
-    try{localStorage.setItem(KEY,JSON.stringify(snapshot()))}
-    catch(e){toast("אין מקום לשמור — נסי להסיר כמה תמונות כבדות")}
+    var snap=snapshot();
+    try{
+      localStorage.setItem(KEY,JSON.stringify(snap));
+      try{localStorage.removeItem(SLIMKEY)}catch(e){}
+    }catch(e){
+      /* Frames are the only thing heavy enough to fill the quota. Drop them
+         from the local mirror rather than lose the whole save: the cloud copy
+         still holds them, and the flag makes it win on the next load. */
+      try{
+        localStorage.setItem(KEY,JSON.stringify(stripImages(snap)));
+        localStorage.setItem(SLIMKEY,"1");
+      }catch(e2){toast("אין מקום לשמור במכשיר — התוכן נשמר בענן")}
+    }
   },250);
 }
 function save(){
   saveLocal();
   if(booting)return;   /* the default template is not something she typed */
   touched();
+  dirty=true;editSeq++;
   schedulePush();
 }
 
@@ -2474,8 +2509,10 @@ function closeEditor(){
   editing=null;
   if(pendingAdopt){
     var row=pendingAdopt;pendingAdopt=null;
-    if(lastTouched()<=(Date.parse(row.updated_at)||0)){
+    if(!dirty&&lastTouched()<=(Date.parse(row.updated_at)||0)&&safeToAdopt(row)){
       adopt(row);toast("עודכן מהמכשיר השני");
+    }else{
+      schedulePush();   /* what she just edited is the newer copy */
     }
   }
   $("drawer").classList.remove("on");
@@ -2714,7 +2751,7 @@ function readImage(file,done){
     img.onload=function(){
       var c=cur();if(!c){done&&done(false);return}
       var many=maxImages(c.type)>1;
-      var max=many?1100:1400,w=img.width,h=img.height;
+      var max=many?900:1200,w=img.width,h=img.height;
       if(w>max||h>max){var r=Math.min(max/w,max/h);w=Math.round(w*r);h=Math.round(h*r)}
       var cv=document.createElement("canvas");cv.width=w;cv.height=h;
       var ctx=cv.getContext("2d");
@@ -2722,7 +2759,7 @@ function readImage(file,done){
       ctx.drawImage(img,0,0,w,h);
       if(!Array.isArray(c.images))c.images=[];
       if(c.images.length>=maxImages(c.type)){done&&done(false,"full");return}
-      c.images.push(cv.toDataURL("image/jpeg",many?.78:.82));
+      c.images.push(cv.toDataURL("image/jpeg",many?.72:.78));
       save();fillEditor(c);refreshCard(c);
       done&&done(true);
     };
@@ -2738,7 +2775,7 @@ function slotImage(file,index){
     var img=new Image();
     img.onload=function(){
       var c=cur();if(!c)return;
-      var max=1100,w=img.width,h=img.height;
+      var max=900,w=img.width,h=img.height;
       if(w>max||h>max){var r=Math.min(max/w,max/h);w=Math.round(w*r);h=Math.round(h*r)}
       var cv=document.createElement("canvas");cv.width=w;cv.height=h;
       var ctx=cv.getContext("2d");
@@ -2746,7 +2783,7 @@ function slotImage(file,index){
       ctx.drawImage(img,0,0,w,h);
       if(!Array.isArray(c.images))c.images=[];
       while(c.images.length<index)c.images.push("");
-      c.images[index]=cv.toDataURL("image/jpeg",.78);
+      c.images[index]=cv.toDataURL("image/jpeg",.72);
       save();renderSlides(c,typeOf(c.type));refreshCard(c);
     };
     img.onerror=function(){toast("לא הצלחתי לקרוא את הקובץ")};
@@ -3170,9 +3207,27 @@ var hadLocalPlan=false;  /* did this browser hold a board before this load? */
 var booting=true;        /* seeding the first month must not look like an edit */
 var pollTimer=null,POLL_MS=45000;   /* safety net only — the socket does the real work */
 var pendingAdopt=null;   /* a pull that arrived while the editor was open */
+var dirty=false;         /* edits this tab made that the server has not confirmed */
+var editSeq=0;           /* bumped per edit, so a slow push cannot clear a newer one */
+var pushFails=0;
 
-function touched(){try{localStorage.setItem(TKEY,String(Date.now()))}catch(e){}}
-function lastTouched(){return +(localStorage.getItem(TKEY)||0)}
+/* The edit clock lives in memory first. It used to live only in localStorage,
+   and once a few frames filled the quota every write there threw — the clock
+   froze, the server always looked newer, and the next poll adopted a copy that
+   predated the images. Losing the mirror must never cost us the timestamp. */
+var touchedAt=0;
+function touched(){
+  touchedAt=Date.now();
+  try{localStorage.setItem(TKEY,String(touchedAt))}catch(e){}
+}
+function lastTouched(){
+  var stored=0;
+  try{stored=+(localStorage.getItem(TKEY)||0)}catch(e){}
+  return Math.max(touchedAt,stored);
+}
+function localIsSlim(){
+  try{return localStorage.getItem(SLIMKEY)==="1"}catch(e){return false}
+}
 
 function accountPull(){
   return ensureFreshToken().then(function(){
@@ -3238,7 +3293,7 @@ function paintSync(){
   m.title=syncStatus==="err"?"הסנכרון נתקע — לחצי לפרטים":"";
 }
 function schedulePush(){
-  if(!SYNC_ON||!syncKey||pulling)return;
+  if(!syncReady()||pulling)return;
   clearTimeout(pushTimer);
   pushTimer=setTimeout(pushNow,600);
 }
@@ -3258,6 +3313,15 @@ function contentSize(snap){
   return n+((snap.ideas||[]).length);
 }
 
+/* Last line of defence before an incoming copy replaces what is on screen.
+   A copy with no frames at all, arriving while we hold some, is the exact
+   shape of the bug that made her images vanish — it is never a real edit.
+   Anything narrower than that (a frame or a slot removed on her phone) still
+   goes through, so deletions keep propagating. */
+function safeToAdopt(row){
+  if(localIsSlim())return true;   /* only the cloud has the full copy */
+  return !(mediaCount(row.data)===0&&mediaCount(snapshot())>0);
+}
 function signedIn(){return !!(SESS&&SESS.user_id)}
 function syncReady(){return SYNC_ON&&(signedIn()||!!syncKey)}
 function doPull(){
@@ -3295,17 +3359,28 @@ function pushNow(){
 function reallyPush(){
   if(!syncReady())return;
   setSync("syncing");
+  var seq=editSeq;
   doPush(snapshot())
     .then(function(ts){
       persistKey();
       serverAt=Date.parse(ts)||Date.now();
+      pushFails=0;
+      if(seq===editSeq)dirty=false;   /* anything typed mid-flight stays pending */
       setSync("ok");
       rtNotify(serverAt);
     })
-    .catch(function(){setSync("err")});
+    .catch(function(){
+      /* A failed push used to be silent, and the board then looked in sync
+         while the cloud was behind. Keep retrying and say so if it persists. */
+      setSync("err");
+      pushFails++;
+      if(pushFails===3)toast("השמירה לענן נתקעה — אל תסגרי את הדף");
+      setTimeout(function(){if(dirty)pushNow()},Math.min(4000*pushFails,30000));
+    });
 }
 
 function adopt(row){
+  dirty=false;pushFails=0;
   state.months=migrate(row.data.months);
   if(Array.isArray(row.data.ideas))state.ideas=row.data.ideas;
   if(Array.isArray(row.data.types)&&row.data.types.length)state.types=row.data.types;
@@ -3324,12 +3399,17 @@ function poll(){
   doStamp().then(function(ts){
     var at=Date.parse(ts)||0;
     if(!at||at===serverAt)return;
-    if(lastTouched()>at){pushNow();return}
+    /* Unsent local work always wins. Clock comparison alone was not enough:
+       our clock and the server's are different clocks, and a push that failed
+       leaves the server legitimately older than what is on screen. */
+    if(dirty||lastTouched()>at){pushNow();return}
     pulling=true;
     return doPull().then(function(row){
       pulling=false;
       if(!row||!row.data||!row.data.months)return;
+      if(dirty)return;                       /* she typed while the pull was out */
       if(editing){pendingAdopt=row;return}   /* don't yank the open card away */
+      if(!safeToAdopt(row))return;
       adopt(row);
       setSync("ok");
       toast("עודכן מהמכשיר השני");
@@ -3368,7 +3448,7 @@ function rtConnect(){
   if(!syncReady())return;
   rtClose();
   channelName(channelSeed()).then(function(name){
-    if(!syncKey)return;
+    if(!syncReady())return;
     rtTopic="realtime:"+name;
     var url="wss://"+SUPA_URL.replace(/^https?:\/\//,"")+
             "/realtime/v1/websocket?apikey="+encodeURIComponent(SUPA_KEY)+"&vsn=1.0.0";
@@ -3391,7 +3471,7 @@ function rtConnect(){
     rt.onclose=function(){
       rtJoined=false;
       if(rtBeat){clearInterval(rtBeat);rtBeat=null}
-      if(!syncKey)return;
+      if(!syncReady())return;
       rtRetry=Math.min(rtRetry+1,6);
       setTimeout(rtConnect,Math.min(1000*Math.pow(2,rtRetry),30000));
     };
@@ -3408,7 +3488,7 @@ function startPolling(){
 document.addEventListener("visibilitychange",function(){
   if(document.hidden)return;
   poll();
-  if(syncKey&&(!rt||rt.readyState>1))rtConnect();
+  if(syncReady()&&(!rt||rt.readyState>1))rtConnect();
 });
 window.addEventListener("focus",poll);
 window.addEventListener("online",function(){poll();schedulePush();rtConnect()});
@@ -3420,7 +3500,10 @@ function pullThenSync(){
   doPull().then(function(row){
     pulling=false;
     var serverHas=row&&row.data&&row.data.months;
-    if(serverHas&&(!hadLocalPlan||Date.parse(row.updated_at)>lastTouched())){
+    /* If the local mirror had to drop its frames to fit, the cloud copy is the
+       only complete one — take it back whenever it actually carries more. */
+    var restores=serverHas&&localIsSlim()&&mediaCount(row.data)>mediaCount(snapshot());
+    if(serverHas&&(!hadLocalPlan||restores||Date.parse(row.updated_at)>lastTouched())){
       booting=false;
       adopt(row);setSync("ok");
       toast("התוכן נטען מהענן");
@@ -3784,7 +3867,7 @@ $("syncStop").onclick=function(){
    for hours. A tiny version file fetched with no-store settles who is stale;
    when the board is idle it refreshes itself, and when she is mid-edit it
    waits and offers a button instead of yanking the page away. */
-var BUILD="ebd0d72d";
+var BUILD="f3713009";
 function versionCheck(){
   if(!/^https?:/.test(location.protocol))return;
   fetch("version.json?t="+Date.now(),{cache:"no-store"})
