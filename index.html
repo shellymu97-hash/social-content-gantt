@@ -383,6 +383,7 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .lsecs .sl li i{font-style:normal;font-weight:700;color:var(--ct);flex:none;font-variant-numeric:tabular-nums;min-width:15px}
 .lsecs .missing{font-size:11.5px;color:var(--faint);padding-top:2px}
 .lfig{
+  position:relative;
   margin:0;width:168px;flex:none;border-radius:var(--r-s);overflow:hidden;
   background:var(--cbg);line-height:0;
 }
@@ -603,6 +604,40 @@ input[type=date].inp{font-variant-numeric:tabular-nums;max-width:190px}
 
 .gallery{display:flex;flex-direction:column;gap:8px}
 .gallery:empty{display:none}
+.gallery.strip{
+  flex-direction:row;flex-wrap:nowrap;gap:9px;
+  overflow-x:auto;padding-bottom:6px;
+}
+.gcard{flex:none;width:96px;display:flex;flex-direction:column;gap:5px}
+.gcard .gthumb{
+  position:relative;width:96px;height:96px;border-radius:var(--r-s);
+  overflow:hidden;background:var(--surface-2);border:1px solid var(--line);
+}
+.gcard .gthumb img{width:100%;height:100%;object-fit:cover;display:block}
+.gcard .gnum{
+  position:absolute;top:4px;inset-inline-start:4px;
+  width:20px;height:20px;border-radius:6px;display:grid;place-items:center;
+  background:var(--brand-deep);color:#fff;
+  font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;
+}
+.gcard .gacts{display:flex;gap:3px;justify-content:center}
+.gcard .gacts button{
+  width:26px;height:24px;border-radius:6px;display:grid;place-items:center;
+  border:1px solid var(--line);background:var(--surface);color:var(--muted);transition:.15s;
+}
+.gcard .gacts button:hover:not(:disabled){border-color:var(--brand);color:var(--brand-deep);background:var(--brand-tint)}
+.gcard .gacts button:disabled{opacity:.3;cursor:default}
+.gcard .gacts .del:hover{border-color:#E7BDB7;color:#C0392B;background:#FDECEC}
+.gcard .gacts svg{width:12px;height:12px}
+.gadd{
+  position:relative;flex:none;width:96px;height:96px;border-radius:var(--r-s);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  border:1.5px dashed var(--line);color:var(--muted);cursor:pointer;
+  font-size:11px;text-align:center;transition:.15s;
+}
+.gadd:hover{border-color:var(--brand);color:var(--brand-deep);background:var(--brand-tint)}
+.gadd svg{width:17px;height:17px}
+.gadd input{position:absolute;inset:0;opacity:0;cursor:pointer}
 .gitem{
   position:relative;display:flex;gap:10px;align-items:center;
   background:var(--surface-2);border-radius:var(--r-m);padding:8px;
@@ -801,6 +836,20 @@ figure:hover .farrow{opacity:1}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
 
 .syncbox{width:min(460px,100%);gap:14px}
+.themelist{display:flex;flex-direction:column;gap:9px}
+.themerow{
+  display:flex;align-items:center;gap:12px;text-align:start;width:100%;
+  padding:12px 14px;border-radius:var(--r-m);
+  border:1.5px solid var(--line);background:var(--surface-2);transition:.15s;
+}
+.themerow:hover{border-color:var(--brand)}
+.themerow[aria-pressed="true"]{border-color:var(--brand);background:var(--brand-tint)}
+.themerow .tname{flex:1;font-size:14.5px;font-weight:700;color:var(--ink)}
+.themerow .dots{display:flex;gap:4px}
+.themerow .dots i{width:16px;height:16px;border-radius:5px;display:block}
+.themerow .tick{width:18px;height:18px;color:var(--brand-deep);opacity:0}
+.themerow[aria-pressed="true"] .tick{opacity:1}
+
 .fmtlist{display:flex;flex-direction:column;gap:8px}
 .fmtopt{
   display:flex;flex-direction:column;gap:2px;align-items:flex-start;text-align:start;
@@ -974,6 +1023,9 @@ figure:hover .farrow{opacity:1}
         <button id="vCal" aria-pressed="true">לוח</button>
         <button id="vList" aria-pressed="false">רשימה</button>
       </div>
+      <button class="iconbtn" id="themeBtn" title="פלטת צבעים" aria-label="פלטת צבעים">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 1 1 0-18c4.97 0 9 3.58 9 8 0 2.5-2 4-4.5 4H15a2 2 0 0 0-1.4 3.4A1.9 1.9 0 0 1 12 21Z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor"/><circle cx="10" cy="7" r="1.2" fill="currentColor"/><circle cx="15" cy="7.5" r="1.2" fill="currentColor"/></svg>
+      </button>
       <button class="today-btn" id="dens" aria-pressed="true" title="הצגת כל השדות בתוך המשבצות">תצוגה מלאה</button>
       <div class="menuwrap">
         <button class="iconbtn" id="menuBtn" title="עוד" aria-label="תפריט" aria-haspopup="true" aria-expanded="false">
@@ -1296,6 +1348,17 @@ figure:hover .farrow{opacity:1}
   </div>
 </div>
 
+<div class="ask" id="themes" hidden role="dialog" aria-modal="true" aria-labelledby="themesT">
+  <div class="askbox syncbox">
+    <h3 id="themesT">פלטת צבעים</h3>
+    <p class="small">הפלטה משנה את כל המערכת — רקע, כותרות, וצבעי סוגי התוכן. הבסיס נשאר בהיר בכל אחת מהן.</p>
+    <div class="themelist" id="themeList"></div>
+    <div class="askacts">
+      <button class="btn btn-ghost" id="themesClose">סגירה</button>
+    </div>
+  </div>
+</div>
+
 <div class="ask" id="fmt" hidden role="dialog" aria-modal="true" aria-labelledby="fmtT">
   <div class="askbox syncbox">
     <h3 id="fmtT">איזה סוג תוכן זה?</h3>
@@ -1375,24 +1438,124 @@ document.documentElement.setAttribute("dir","rtl");
 document.documentElement.setAttribute("lang","he");
 
 /* ── constants ── */
+/* ── colour schemes ──
+   A theme names a handful of anchors; every tint, divider and text tone is
+   derived from them at runtime, so a new scheme is a short list rather than a
+   hundred hand-picked values. Every scheme keeps a light ground. */
+function hex2rgb(h){
+  h=h.replace("#","");
+  if(h.length===3)h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];
+}
+function rgb2hex(r){
+  return "#"+r.map(function(v){
+    var x=Math.max(0,Math.min(255,Math.round(v))).toString(16);
+    return x.length<2?"0"+x:x;
+  }).join("");
+}
+function mix(a,b,t){
+  var x=hex2rgb(a),y=hex2rgb(b);
+  return rgb2hex([0,1,2].map(function(i){return x[i]+(y[i]-x[i])*t}));
+}
+function relLum(h){
+  return hex2rgb(h).map(function(v){
+    v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4);
+  }).reduce(function(a,c,i){return a+[.2126,.7152,.0722][i]*c},0);
+}
+function contrast(a,b){
+  var l1=relLum(a),l2=relLum(b);
+  return (Math.max(l1,l2)+.05)/(Math.min(l1,l2)+.05);
+}
+/* darken until the label is comfortably readable on its own tint */
+function readable(base,bg){
+  var c=base;
+  for(var i=0;i<14&&contrast(c,bg)<4.5;i++)c=mix(c,"#000000",.12);
+  return c;
+}
+function swatchSet(base,paper){
+  var bg=mix(base,paper,.86);
+  return {c:base,bg:bg,ln:mix(base,paper,.62),tx:readable(base,bg)};
+}
+
+var THEMES=[
+  {id:"turquoise",name:"טורקיז",
+   paper:"#FCFEFD",ground:"#F2F6F5",ink:"#0F1E1D",brand:"#0E9E9B",glow:"#0FEFE9",
+   washes:[["#0FEFE9",.09],["#DE93AE",.08],["#9A81C8",.045]],
+   swatches:["#3A9E9B","#6D94CE","#9A81C8","#DE93AE","#D9A75C","#7FAE85","#E09A8B","#6FB3C9","#B285A8","#8C9AA6"]},
+
+  {id:"forest",name:"יער קיץ",
+   paper:"#FDFCF8",ground:"#F4F3EA",ink:"#22271F",brand:"#769967",glow:"#B6BA8A",
+   washes:[["#769967",.10],["#D08E9F",.09],["#E3DEA1",.10]],
+   swatches:["#769967","#BA6483","#D08E9F","#B6BA8A","#E6A199","#CEBBD9","#E6D595","#8FA98C","#C98FA0","#9AA37E"]},
+
+  {id:"espresso",name:"אספרסו",
+   paper:"#FEFCF8",ground:"#F5EFE7",ink:"#2A1C15",brand:"#9B6F53",glow:"#CBB4A0",
+   washes:[["#9B6F53",.10],["#CBB4A0",.12],["#59392D",.05]],
+   swatches:["#9B6F53","#CBB4A0","#8C7B6A","#B08968","#59392D","#C4A484","#A9836B","#7D6A58","#D0B49A","#6B4F3A"]},
+
+  {id:"fresh",name:"התחלה רעננה",
+   paper:"#FDFDFC",ground:"#F1F3F4",ink:"#1B2A29",brand:"#2A5654",glow:"#99BDC1",
+   washes:[["#99BDC1",.13],["#C8B2CE",.10],["#D5C472",.08]],
+   swatches:["#2A5654","#8A9445","#C8B2CE","#99BDC1","#771C31","#D5C472","#E5D1D1","#5E8A87","#A8B36A","#8898A6"]}
+];
+
 /* Ten pastel families to draw from when a new content type is added. Each is
    a full set — stripe, tint, divider and a deeper tone for text — so a type
    she invents looks native rather than bolted on. */
-var PALETTE=[
-  {key:"teal",   name:"טורקיז", c:"#3A9E9B", bg:"#EAF6F5", ln:"#BEE3E1", tx:"#1F7A77"},
-  {key:"blue",   name:"תכלת",   c:"#6D94CE", bg:"#EEF3FB", ln:"#CBDCF2", tx:"#3F6AA8"},
-  {key:"violet", name:"לבנדר",  c:"#9A81C8", bg:"#F4EFFA", ln:"#DCD0EF", tx:"#6B4C9E"},
-  {key:"pink",   name:"ורוד",   c:"#DE93AE", bg:"#FCEFF4", ln:"#F4D3DF", tx:"#A54F6D"},
-  {key:"amber",  name:"חמרה",   c:"#D9A75C", bg:"#FBF3E6", ln:"#EEDCBD", tx:"#8E6520"},
-  {key:"green",  name:"מרווה",  c:"#7FAE85", bg:"#EEF6EF", ln:"#CFE3D2", tx:"#4B7C52"},
-  {key:"coral",  name:"אלמוג",  c:"#E09A8B", bg:"#FCF0ED", ln:"#F5D7CF", tx:"#A65B49"},
-  {key:"sky",    name:"שמיים",  c:"#6FB3C9", bg:"#EDF6F9", ln:"#C8E3EB", tx:"#2F7B93"},
-  {key:"plum",   name:"שזיף",   c:"#B285A8", bg:"#F7EFF5", ln:"#E5D0DF", tx:"#7B4E70"},
-  {key:"slate",  name:"אפור",   c:"#8C9AA6", bg:"#F1F4F6", ln:"#D8DFE4", tx:"#566773"}
-];
+var SWATCH_KEYS=["teal","blue","violet","pink","amber","green","coral","sky","plum","slate"];
+var SWATCH_NAMES=["ראשי","שני","שלישי","רביעי","חמישי","שישי","שביעי","שמיני","תשיעי","עשירי"];
+var PALETTE=[];
+var theme=THEMES[0];
+
+function themeById(id){
+  for(var i=0;i<THEMES.length;i++)if(THEMES[i].id===id)return THEMES[i];
+  return THEMES[0];
+}
+function buildPalette(th){
+  PALETTE=th.swatches.map(function(base,i){
+    var set=swatchSet(base,th.paper);
+    return {key:SWATCH_KEYS[i],name:SWATCH_NAMES[i],c:set.c,bg:set.bg,ln:set.ln,tx:set.tx};
+  });
+}
 function paletteOf(key){
   for(var i=0;i<PALETTE.length;i++)if(PALETTE[i].key===key)return PALETTE[i];
   return PALETTE[0];
+}
+
+function applyTheme(id){
+  theme=themeById(id);
+  buildPalette(theme);
+  var r=document.documentElement.style,th=theme;
+  r.setProperty("--bg",th.ground);
+  r.setProperty("--surface",th.paper);
+  r.setProperty("--surface-2",mix(th.ground,th.ink,.045));
+  r.setProperty("--ink",th.ink);
+  r.setProperty("--ink-2",mix(th.ink,th.paper,.28));
+  r.setProperty("--muted",mix(th.ink,th.paper,.55));
+  r.setProperty("--faint",mix(th.ink,th.paper,.70));
+  r.setProperty("--line",mix(th.ground,th.ink,.11));
+  r.setProperty("--line-2",mix(th.ground,th.ink,.05));
+  r.setProperty("--brand",th.brand);
+  r.setProperty("--brand-deep",mix(th.brand,"#000000",.22));
+  r.setProperty("--brand-glow",th.glow);
+  r.setProperty("--brand-tint",mix(th.brand,th.paper,.88));
+  PALETTE.forEach(function(pl,i){
+    var k=["carousel","broll","reel","project"][i];
+    if(!k)return;
+    r.setProperty("--t-"+k,pl.c);
+    r.setProperty("--t-"+k+"-bg",pl.bg);
+    r.setProperty("--t-"+k+"-ln",pl.ln);
+    r.setProperty("--t-"+k+"-tx",pl.tx);
+  });
+  r.setProperty("--paper-washes",th.washes.map(function(w,i){
+    var spots=[
+      "1100px 620px at 88% -8%","900px 560px at 4% 108%","760px 520px at 52% 42%"
+    ];
+    return "radial-gradient("+spots[i]+", "+mix(w[0],th.ground,1-w[1])+", transparent "+(62-i*2)+"%)";
+  }).join(", "));
+  document.body.style.background="var(--paper-washes), "+th.ground;
+  var meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.setAttribute("content",th.ground);
 }
 
 /* A type's *format* decides which fields the editor puts in front of her.
@@ -1648,10 +1811,11 @@ function load(){
       if(d&&Array.isArray(d.ideas))state.ideas=d.ideas;
       if(d&&Array.isArray(d.types)&&d.types.length)state.types=d.types;
       if(d&&d.ui&&typeof d.ui.dense==="boolean")dense=d.ui.dense;
+      if(d&&d.ui&&d.ui.theme)applyTheme(d.ui.theme);
     }
   }catch(e){}
 }
-function snapshot(){return {v:3,months:state.months,ideas:state.ideas,types:state.types,ui:{dense:dense}}}
+function snapshot(){return {v:3,months:state.months,ideas:state.ideas,types:state.types,ui:{dense:dense,theme:theme.id}}}
 var saveTimer;
 function saveLocal(){
   clearTimeout(saveTimer);
@@ -1814,8 +1978,8 @@ function figureEl(s){
       b.addEventListener("pointerdown",function(e){e.stopPropagation()});
       return b;
     };
-    var prev=mk("prev","M15 18l-6-6 6-6","התמונה הקודמת");
-    var next=mk("next","M9 18l6-6-6-6","התמונה הבאה");
+    var prev=mk("prev","M9 18l6-6-6-6","התמונה הקודמת");
+    var next=mk("next","M15 18l-6-6 6-6","התמונה הבאה");
     prev.addEventListener("click",step(-1));
     next.addEventListener("click",step(1));
     fig.appendChild(prev);fig.appendChild(next);
@@ -2319,38 +2483,6 @@ function renderSlides(s,t){
     row.style.setProperty("--c",t.c);row.style.setProperty("--ct",t.tx);
     var n=el("span","num");n.textContent=i+1;
 
-    /* the frame for this slide sits next to its text — a carousel is planned
-       as pairs, not as a pile of images with a separate pile of captions */
-    var shot=el("label","slideshot"+(s.images[i]?" has":""));
-    shot.title=s.images[i]?"החלפת התמונה של שקופית "+(i+1):"תמונה לשקופית "+(i+1);
-    if(s.images[i]){
-      var im=new Image();im.src=s.images[i];im.alt="";im.draggable=false;
-      shot.appendChild(im);
-      var rmi=el("button","shotrm");rmi.type="button";
-      rmi.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
-      rmi.setAttribute("aria-label","הסרת התמונה משקופית "+(i+1));
-      rmi.onclick=function(e){
-        e.preventDefault();e.stopPropagation();
-        var c=cur();if(!c)return;
-        c.images[i]="";
-        while(c.images.length&&!c.images[c.images.length-1])c.images.pop();
-        save();renderSlides(c,typeOf(c.type));refreshCard(c);
-      };
-      shot.appendChild(rmi);
-    }else{
-      shot.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5L5 21"/></svg>';
-    }
-    var fin=document.createElement("input");
-    fin.type="file";fin.accept="image/*";fin.className="shotin";
-    fin.setAttribute("aria-label","תמונה לשקופית "+(i+1));
-    fin.addEventListener("change",function(e){
-      var f=e.target.files[0];e.target.value="";
-      if(!f)return;
-      slotImage(f,i);
-    });
-    shot.appendChild(fin);
-    row.appendChild(shot);
-
     var ta=el("textarea");
     ta.value=txt;ta.rows=2;
     ta.placeholder=i===0?"שקופית 1 — ההוק":"שקופית "+(i+1);
@@ -2368,7 +2500,7 @@ function renderSlides(s,t){
       if(!c.slides.length)c.slides=[""];
       save();renderSlides(c,t);
     };
-    row.insertBefore(n,row.firstChild);
+    row.appendChild(n);
     row.appendChild(ta);row.appendChild(rm);
     w.appendChild(row);
     autoGrow(ta);
@@ -2570,19 +2702,68 @@ function readImages(list){
 $("fImg").addEventListener("change",function(e){readImages(e.target.files);e.target.value=""});
 
 function renderGallery(s){
-  var g=$("gallery"),imgs=imagesOf(s),lim=maxImages(s.type),t=typeOf(s.type);
+  var g=$("gallery"),imgs=imagesOf(s).filter(Boolean),lim=maxImages(s.type),t=typeOf(s.type);
   g.textContent="";
-  if(t.slides){
-    /* the frames live beside their slides instead */
+  g.classList.toggle("strip",lim>1);
+
+  if(lim>1){
+    /* a carousel's frames read across, numbered to match the slides */
     $("imgDrop").hidden=true;
-    $("imgHint").textContent="— התמונות נבחרות ליד כל שקופית למעלה";
+    $("imgHint").textContent="— עד "+lim+", לפי הסדר שיעלו";
+    imgs.forEach(function(src,i){
+      var it=el("div","gcard");
+      var th=el("div","gthumb");
+      var im=new Image();im.src=src;im.alt="";im.draggable=false;
+      th.appendChild(im);
+      var n=el("span","gnum");n.textContent=i+1;
+      th.appendChild(n);
+      it.appendChild(th);
+
+      var acts=el("div","gacts");
+      var mkb=function(path,label,fn,disabled){
+        var b=el("button");
+        b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="'+path+'"/></svg>';
+        b.title=label;b.setAttribute("aria-label",label);
+        b.disabled=!!disabled;b.onclick=fn;
+        return b;
+      };
+      acts.appendChild(mkb("M9 18l6-6-6-6","הזזה אחורה",function(){
+        var c=cur();if(!c)return;
+        var a=c.images;a.splice(i-1,0,a.splice(i,1)[0]);
+        save();renderGallery(c);refreshCard(c);
+      },i===0));
+      acts.appendChild(mkb("M15 18l-6-6 6-6","הזזה קדימה",function(){
+        var c=cur();if(!c)return;
+        var a=c.images;a.splice(i+1,0,a.splice(i,1)[0]);
+        save();renderGallery(c);refreshCard(c);
+      },i===imgs.length-1));
+      var del=mkb("M6 6l12 12M18 6L6 18","הסרת התמונה",function(){
+        var c=cur();if(!c)return;
+        c.images.splice(i,1);save();renderGallery(c);refreshCard(c);
+      });
+      del.className="del";
+      acts.appendChild(del);
+      it.appendChild(acts);
+      g.appendChild(it);
+    });
+
+    if(imgs.length<lim){
+      var add=el("label","gadd");
+      add.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>העלאת תמונות</span>';
+      add.title="הוספת תמונות לקרוסלה";
+      var fin=document.createElement("input");
+      fin.type="file";fin.accept="image/*";fin.multiple=true;
+      fin.setAttribute("aria-label","הוספת תמונות");
+      fin.addEventListener("change",function(e){readImages(e.target.files);e.target.value=""});
+      add.appendChild(fin);
+      g.appendChild(add);
+    }
     return;
   }
-  $("imgHint").textContent=lim>1
-    ? "— עד "+lim+" תמונות, לפי סדר השקופיות"
-    : "";
+
+  $("imgHint").textContent="";
   $("imgDrop").hidden=imgs.length>=lim;
-  $("fImg").multiple=lim>1;
+  $("fImg").multiple=false;
   imgs.forEach(function(src,i){
     var it=el("div","gitem");
     if(lim>1){var n=el("span","gnum");n.textContent=i+1;it.appendChild(n)}
@@ -2760,6 +2941,7 @@ $("mPrint").onclick=function(){
 document.addEventListener("keydown",function(e){
   if(e.key==="Escape"){
     if(!$("onboard").hidden)return;
+    if(!$("themes").hidden){$("themes").hidden=true;return}
     if(!$("fmt").hidden){$("fmt").hidden=true;return}
     if(!$("prefs").hidden){$("prefs").hidden=true;return}
     if(!$("types").hidden){$("types").hidden=true;return}
@@ -3052,6 +3234,7 @@ function adopt(row){
   if(Array.isArray(row.data.ideas))state.ideas=row.data.ideas;
   if(Array.isArray(row.data.types)&&row.data.types.length)state.types=row.data.types;
   if(row.data.ui&&typeof row.data.ui.dense==="boolean")dense=row.data.ui.dense;
+  if(row.data.ui&&row.data.ui.theme)applyTheme(row.data.ui.theme);
   serverAt=Date.parse(row.updated_at)||Date.now();
   saveLocal();touched();persistKey();
   render();
@@ -3363,6 +3546,31 @@ $("typeAdd").onclick=function(){
   });
   $("fmt").hidden=false;
 };
+function renderThemes(){
+  var w=$("themeList");w.textContent="";
+  THEMES.forEach(function(th){
+    var b=el("button","themerow");b.type="button";
+    b.setAttribute("aria-pressed",th.id===theme.id?"true":"false");
+    var nm=el("span","tname");nm.textContent=th.name;
+    var dots=el("span","dots");
+    th.swatches.slice(0,5).forEach(function(c){
+      var i2=document.createElement("i");i2.style.background=c;dots.appendChild(i2);
+    });
+    var tick=el("span","tick");
+    tick.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+    b.appendChild(nm);b.appendChild(dots);b.appendChild(tick);
+    b.onclick=function(){
+      applyTheme(th.id);
+      save();render();renderThemes();
+      toast("הפלטה הוחלפה ל״"+th.name+"״");
+    };
+    w.appendChild(b);
+  });
+}
+$("themeBtn").onclick=function(){renderThemes();$("themes").hidden=false};
+$("themesClose").onclick=function(){$("themes").hidden=true};
+$("themes").onclick=function(e){if(e.target===$("themes"))$("themes").hidden=true};
+
 function openTypes(){renderTypes();$("types").hidden=false}
 $("typesBtn").onclick=openTypes;
 $("typesClose").onclick=function(){$("types").hidden=true};
@@ -3500,7 +3708,7 @@ $("syncStop").onclick=function(){
    for hours. A tiny version file fetched with no-store settles who is stale;
    when the board is idle it refreshes itself, and when she is mid-edit it
    waits and offers a button instead of yanking the page away. */
-var BUILD="4e160212";
+var BUILD="e7219833";
 function versionCheck(){
   if(!/^https?:/.test(location.protocol))return;
   fetch("version.json?t="+Date.now(),{cache:"no-store"})
@@ -3784,6 +3992,7 @@ function signOut(){
 }
 
 /* ── boot ── */
+applyTheme(THEMES[0].id);
 load();
 loadSession();
 var freshDevice=false,needGate=false;
