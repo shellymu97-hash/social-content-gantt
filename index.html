@@ -144,7 +144,7 @@ button{cursor:pointer;background:none;border:0;padding:0}
   border:1px solid var(--line);background:var(--surface);
   font-size:13px;color:var(--ink-2);transition:.15s;white-space:nowrap;
 }
-.chip .swatch{width:9px;height:9px;border-radius:3px;background:var(--c);flex:none}
+.chip .swatch{width:11px;height:11px;border-radius:3px;background:var(--ct);flex:none}
 .chip .n{font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums}
 .chip:hover{border-color:var(--c)}
 .chip[aria-pressed="true"]{background:var(--cbg);border-color:var(--c);color:var(--ct);font-weight:700}
@@ -257,8 +257,8 @@ button{cursor:pointer;background:none;border:0;padding:0}
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
 }
 .card .ttl.empty{color:var(--faint);font-weight:400;font-style:italic}
-.card .meta{display:flex;align-items:center;gap:5px;font-size:11.8px;color:var(--ct);font-weight:700}
-.card .meta .dot{width:5px;height:5px;border-radius:99px;background:var(--c);flex:none}
+.card .meta{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ct);font-weight:700}
+.card .meta .dot{width:8px;height:8px;border-radius:99px;background:var(--ct);flex:none;box-shadow:0 0 0 1.5px rgba(255,255,255,.55)}
 .card .badges{display:flex;align-items:center;gap:4px;margin-top:1px}
 .card .chook{
   font-size:12px;line-height:1.45;color:var(--ink);
@@ -277,25 +277,25 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .card .sec{display:flex;flex-direction:column;gap:2px;padding-top:1px}
 .card .sec+.sec{border-top:1px solid rgba(0,0,0,.14);padding-top:7px}
 .card .sec .lb{
-  font-size:10.5px;font-weight:700;letter-spacing:.07em;
-  color:var(--chrome);opacity:1;
+  font-size:12px;font-weight:700;letter-spacing:.05em;
+  color:var(--ink);opacity:1;
 }
 .card .sec .tx{
-  font-size:12.8px;line-height:1.55;color:var(--ink);
+  font-size:13.4px;line-height:1.55;color:var(--ink);
   white-space:pre-wrap;overflow-wrap:anywhere;
 }
 .card .sl{
   margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:3px;
 }
 .card .sl li{
-  display:flex;gap:6px;font-size:12.6px;line-height:1.5;color:var(--ink);
+  display:flex;gap:6px;font-size:13.2px;line-height:1.5;color:var(--ink);
   overflow-wrap:anywhere;
 }
 .card .sl li i{
   font-style:normal;font-weight:700;color:var(--ct);flex:none;
   font-variant-numeric:tabular-nums;min-width:12px;
 }
-.card .missing{font-size:11px;color:var(--muted);padding-top:2px}
+.card .missing{font-size:11.5px;font-weight:700;color:var(--ink);padding-top:2px}
 .card.ghost{
   position:fixed;z-index:999;pointer-events:none;width:var(--w);
   box-shadow:var(--shadow-l);transform:rotate(-1.5deg) scale(1.03);opacity:.97;
@@ -381,12 +381,12 @@ button{cursor:pointer;background:none;border:0;padding:0}
 .lsecs{display:flex;flex-direction:column;gap:7px}
 .lsecs .sec{display:flex;flex-direction:column;gap:2px}
 .lsecs .sec+.sec{border-top:1px solid rgba(0,0,0,.12);padding-top:8px}
-.lsecs .sec .lb{font-size:10.5px;font-weight:700;letter-spacing:.07em;color:var(--chrome)}
+.lsecs .sec .lb{font-size:12.5px;font-weight:700;letter-spacing:.05em;color:var(--ink)}
 .lsecs .sec .tx{font-size:13.5px;line-height:1.65;color:var(--ink-2);white-space:pre-wrap;overflow-wrap:anywhere}
 .lsecs .sl{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px}
 .lsecs .sl li{display:flex;gap:8px;font-size:13.5px;line-height:1.6;color:var(--ink-2);overflow-wrap:anywhere}
 .lsecs .sl li i{font-style:normal;font-weight:700;color:var(--ct);flex:none;font-variant-numeric:tabular-nums;min-width:15px}
-.lsecs .missing{font-size:11.5px;color:var(--faint);padding-top:2px}
+.lsecs .missing{font-size:12px;font-weight:700;color:var(--ink);padding-top:2px}
 .lfig{
   position:relative;
   margin:0;width:168px;flex:none;border-radius:var(--r-s);overflow:hidden;
@@ -820,7 +820,7 @@ figure:hover .farrow{opacity:1}
 /* sync */
 .ideasbtn{
   display:inline-flex;align-items:center;gap:8px;margin-inline-start:auto;
-  padding:8px 16px;border-radius:999px;white-space:nowrap;
+  padding:9px 34px;border-radius:999px;white-space:nowrap;
   background:var(--ink);
   color:#fff;font-size:13.5px;font-weight:700;
   box-shadow:0 2px 10px -4px rgba(15,30,29,.5);
@@ -1509,7 +1509,7 @@ var THEMES=[
   {id:"forest",name:"יער קיץ",
    paper:"#FFFEFB",ground:"#FAF9F1",ink:"#22271F",brand:"#5F8451",glow:"#B6BA8A",
    washes:[["#769967",.12],["#D08E9F",.10],["#E3DEA1",.12]],
-   swatches:["#E3DEA1","#D08E9F","#F4C2D0","#CEBBD9","#E6A199",
+   swatches:["#E3DEA1","#D08E9F","#A8C49A","#CEBBD9","#E6A199",
              "#B6BA8A","#769967","#4E7F72","#E6D595","#8A9683"]},
 
   {id:"espresso",name:"אספרסו",
@@ -3750,7 +3750,7 @@ $("syncStop").onclick=function(){
    for hours. A tiny version file fetched with no-store settles who is stale;
    when the board is idle it refreshes itself, and when she is mid-edit it
    waits and offers a button instead of yanking the page away. */
-var BUILD="5c299d0b";
+var BUILD="4a3a2966";
 function versionCheck(){
   if(!/^https?:/.test(location.protocol))return;
   fetch("version.json?t="+Date.now(),{cache:"no-store"})
