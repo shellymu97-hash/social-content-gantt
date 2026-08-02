@@ -284,18 +284,22 @@ button{cursor:pointer;background:none;border:0;padding:0}
   font-size:13.4px;line-height:1.55;color:var(--ink);
   white-space:pre-wrap;overflow-wrap:anywhere;
 }
-.tx.clamped{
-  display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;
+.cbody{
+  display:flex;flex-direction:column;gap:7px;
+  max-height:210px;overflow:hidden;position:relative;
 }
-.sl li.extra{display:none}
-.sl.all li.extra{display:flex}
+.cbody.open{max-height:none}
+.cbody:not(.open)::after{
+  content:"";position:absolute;inset-inline:0;bottom:0;height:26px;
+  background:linear-gradient(transparent,var(--cbg));pointer-events:none;
+}
 .more{
   align-self:flex-start;margin-top:3px;padding:2px 0;
   font-size:11.5px;font-weight:700;color:var(--ink);
   text-decoration:underline;text-underline-offset:2px;
 }
 .more:hover{opacity:.65}
-.lsecs .tx.clamped{-webkit-line-clamp:5}
+
 .card .sl{
   margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:3px;
 }
@@ -1993,19 +1997,8 @@ function filledSlides(s){
 function sectionEl(label,text){
   var sec=el("div","sec");
   var lb=el("div","lb");lb.textContent=label;
-  var tx=el("div","tx clamped");tx.textContent=text;
+  var tx=el("div","tx");tx.textContent=text;
   sec.appendChild(lb);sec.appendChild(tx);
-  if(text.length>150||text.split("\n").length>4){
-    var more=el("button","more");more.type="button";
-    more.textContent="קרא עוד";
-    more.addEventListener("pointerdown",function(e){e.stopPropagation()});
-    more.onclick=function(e){
-      e.preventDefault();e.stopPropagation();
-      var open=tx.classList.toggle("clamped");
-      more.textContent=open?"קרא עוד":"הצג פחות";
-    };
-    sec.appendChild(more);
-  }
   return sec;
 }
 /* Browsing the frames on the board itself: arrows step through without
@@ -2063,26 +2056,13 @@ function detailInto(target,s,t,withMissing){
       var sec=el("div","sec");
       var lb=el("div","lb");lb.textContent=t.bodyLabel;
       var ol=el("ul","sl");
-      var CAP=3;
       slides.forEach(function(txt,i){
         var li=el("li");
-        if(i>=CAP)li.className="extra";
         var n=el("i");n.textContent=(i+1)+".";
         var sp=el("span");sp.textContent=txt.trim();
         li.appendChild(n);li.appendChild(sp);ol.appendChild(li);
       });
       sec.appendChild(lb);sec.appendChild(ol);
-      if(slides.length>CAP){
-        var mo=el("button","more");mo.type="button";
-        mo.textContent="קרא עוד ("+(slides.length-CAP)+")";
-        mo.addEventListener("pointerdown",function(e){e.stopPropagation()});
-        mo.onclick=function(e){
-          e.preventDefault();e.stopPropagation();
-          var open=ol.classList.toggle("all");
-          mo.textContent=open?"הצג פחות":"קרא עוד ("+(slides.length-CAP)+")";
-        };
-        sec.appendChild(mo);
-      }
       target.appendChild(sec);
     }else{
       target.appendChild(sectionEl(t.bodyLabel,s.body.trim()));
@@ -2149,7 +2129,22 @@ function cardEl(s){
     if(bd.children.length)b.appendChild(bd);
   }else{
     if(imagesOf(s).length)b.appendChild(figureEl(s));
-    detailInto(b,s,t,true);
+    var body=el("div","cbody");
+    detailInto(body,s,t,true);
+    b.appendChild(body);
+    var more=el("button","more");more.type="button";
+    more.textContent="קרא עוד";more.hidden=true;
+    more.addEventListener("pointerdown",function(e){e.stopPropagation()});
+    more.onclick=function(e){
+      e.preventDefault();e.stopPropagation();
+      var open=body.classList.toggle("open");
+      more.textContent=open?"הצג פחות":"קרא עוד";
+    };
+    b.appendChild(more);
+    /* the toggle only earns its place when something is actually cut off */
+    requestAnimationFrame(function(){
+      if(body.scrollHeight-body.clientHeight>6)more.hidden=false;
+    });
   }
 
   b.setAttribute("aria-label",t.label+" — "+(s.topic||"ללא נושא")+" — "+st.label);
@@ -3789,7 +3784,7 @@ $("syncStop").onclick=function(){
    for hours. A tiny version file fetched with no-store settles who is stale;
    when the board is idle it refreshes itself, and when she is mid-edit it
    waits and offers a button instead of yanking the page away. */
-var BUILD="ed52fdc6";
+var BUILD="ebd0d72d";
 function versionCheck(){
   if(!/^https?:/.test(location.protocol))return;
   fetch("version.json?t="+Date.now(),{cache:"no-store"})
