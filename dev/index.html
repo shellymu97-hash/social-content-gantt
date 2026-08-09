@@ -2801,8 +2801,12 @@ function readImage(file,done){
       if(c.images.length>=maxImages(c.type)){done&&done(false,"full");return}
       canvasFrame(cv,many?.72:.78,function(ref){
         if(!ref){done&&done(false);return}
-        var c2=cur();if(!c2||c2.id!==c.id){done&&done(false);return}
-        if(c2.images.length>=maxImages(c2.type)){done&&done(false,"full");return}
+        /* The upload already happened. Every path that then declines the frame
+           has to take the file back out, or the bucket fills with strays —
+           a whole batch can be uploaded before the slot turns out to be full. */
+        var drop=function(why){deleteFrame(ref);done&&done(false,why)};
+        var c2=cur();if(!c2||c2.id!==c.id){drop();return}
+        if(c2.images.length>=maxImages(c2.type)){drop("full");return}
         c2.images.push(ref);
         save();fillEditor(c2);refreshCard(c2);
         done&&done(true);
@@ -2829,7 +2833,7 @@ function slotImage(file,index){
       if(!Array.isArray(c.images))c.images=[];
       canvasFrame(cv,.72,function(ref){
         if(!ref)return;
-        var c2=cur();if(!c2||c2.id!==c.id)return;
+        var c2=cur();if(!c2||c2.id!==c.id){deleteFrame(ref);return}
         while(c2.images.length<index)c2.images.push("");
         var old=c2.images[index];
         c2.images[index]=ref;
@@ -4010,7 +4014,7 @@ $("syncStop").onclick=function(){
    for hours. A tiny version file fetched with no-store settles who is stale;
    when the board is idle it refreshes itself, and when she is mid-edit it
    waits and offers a button instead of yanking the page away. */
-var BUILD="43dd9a67";
+var BUILD="b6116f44";
 function versionCheck(){
   if(!/^https?:/.test(location.protocol))return;
   fetch("version.json?t="+Date.now(),{cache:"no-store"})
