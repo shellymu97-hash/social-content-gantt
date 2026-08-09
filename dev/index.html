@@ -770,6 +770,21 @@ figure:hover .farrow{opacity:1}
 .gatebox h1{margin:0;font-size:21px;font-weight:700;text-align:center;letter-spacing:-.01em}
 .gatelead{margin:0 0 14px;font-size:13.5px;color:var(--muted);text-align:center;line-height:1.55}
 .gateform{display:flex;flex-direction:column;gap:13px}
+/* show/hide the password — the field is latin-only and reads left to right,
+   so the eye sits on the left where the text ends */
+.passwrap{position:relative;display:block}
+.passwrap .inp{padding-inline-start:42px}
+.passwrap .peek{
+  position:absolute;inset-inline-start:6px;top:50%;transform:translateY(-50%);
+  width:32px;height:32px;display:grid;place-items:center;
+  border-radius:8px;color:var(--faint);background:transparent;border:0;cursor:pointer;
+}
+.passwrap .peek:hover{color:var(--ink-2);background:var(--surface-2)}
+.passwrap .peek svg{width:17px;height:17px;display:block}
+.passwrap .peek .i-hide{display:none}
+.passwrap .peek[aria-pressed="true"]{color:var(--brand-deep)}
+.passwrap .peek[aria-pressed="true"] .i-show{display:none}
+.passwrap .peek[aria-pressed="true"] .i-hide{display:block}
 .grow{display:flex;flex-direction:column;gap:6px}
 .grow label{font-size:11.5px;font-weight:700;color:var(--muted);letter-spacing:.05em}
 .grow label .opt{font-weight:400;letter-spacing:0;color:var(--faint)}
@@ -1310,7 +1325,10 @@ figure:hover .farrow{opacity:1}
       </div>
       <div class="grow">
         <label for="suPass">סיסמה</label>
-        <input class="inp" id="suPass" type="password" dir="ltr" autocomplete="new-password">
+        <div class="passwrap">
+          <input class="inp" id="suPass" type="password" dir="ltr" autocomplete="new-password">
+          <button type="button" class="peek" id="suPeek" aria-label="הצגת הסיסמה" aria-pressed="false" title="הצגת הסיסמה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" class="i-show"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12Z"/><circle cx="12" cy="12" r="2.6"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" class="i-hide"><path d="M2 12s3.6-6.5 10-6.5c2 0 3.7.6 5.1 1.4M22 12s-3.6 6.5-10 6.5c-2 0-3.7-.6-5.1-1.4"/><path d="M4 20 20 4"/></svg></button>
+        </div>
         <span class="hint">לפחות 8 תווים</span>
       </div>
       <div class="grow">
@@ -1338,7 +1356,10 @@ figure:hover .farrow{opacity:1}
       </div>
       <div class="grow">
         <label for="liPass">סיסמה</label>
-        <input class="inp" id="liPass" type="password" dir="ltr" autocomplete="current-password">
+        <div class="passwrap">
+          <input class="inp" id="liPass" type="password" dir="ltr" autocomplete="current-password">
+          <button type="button" class="peek" id="liPeek" aria-label="הצגת הסיסמה" aria-pressed="false" title="הצגת הסיסמה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" class="i-show"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12Z"/><circle cx="12" cy="12" r="2.6"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" class="i-hide"><path d="M2 12s3.6-6.5 10-6.5c2 0 3.7.6 5.1 1.4M22 12s-3.6 6.5-10 6.5c-2 0-3.7-.6-5.1-1.4"/><path d="M4 20 20 4"/></svg></button>
+        </div>
       </div>
       <button class="btn btn-primary gatego" id="doLogin">כניסה</button>
       <p class="gateswap">אין לך עדיין חשבון? <button id="toSignup">הרשמה</button></p>
@@ -3882,7 +3903,7 @@ $("syncStop").onclick=function(){
    for hours. A tiny version file fetched with no-store settles who is stale;
    when the board is idle it refreshes itself, and when she is mid-edit it
    waits and offers a button instead of yanking the page away. */
-var BUILD="b08492e3";
+var BUILD="d4100c71";
 function versionCheck(){
   if(!/^https?:/.test(location.protocol))return;
   fetch("version.json?t="+Date.now(),{cache:"no-store"})
@@ -3912,6 +3933,22 @@ function gateShow(which){
   gateErr("");
 }
 function gateHide(){$("gate").hidden=true}
+/* Typing a password blind is the main reason a correct one gets rejected,
+   so both fields can be revealed. */
+function wirePeek(btnId,fieldId){
+  var b=$(btnId),f=$(fieldId);
+  b.onclick=function(){
+    var show=f.type==="password";
+    f.type=show?"text":"password";
+    b.setAttribute("aria-pressed",show?"true":"false");
+    b.setAttribute("aria-label",show?"הסתרת הסיסמה":"הצגת הסיסמה");
+    b.title=show?"הסתרת הסיסמה":"הצגת הסיסמה";
+    f.focus();
+    var v=f.value;f.value="";f.value=v;   /* keep the caret at the end */
+  };
+}
+wirePeek("suPeek","suPass");
+wirePeek("liPeek","liPass");
 function gateErr(msg){
   var e=$("gateErr");
   e.textContent=msg||"";
