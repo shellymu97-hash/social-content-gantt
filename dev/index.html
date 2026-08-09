@@ -2080,14 +2080,14 @@ function figureEl(s){
   var imgs=imagesOf(s).filter(Boolean);
   var fig=el("figure");
   var img=new Image();
-  img.src=imgs[0];img.alt="";img.draggable=false;
+  setFrame(img,imgs[0]);img.alt="";img.draggable=false;
   fig.appendChild(img);
 
   if(imgs.length>1){
     var at=0;
     var count=el("span","fcount");
     var paint=function(){
-      img.src=imgs[at];
+      setFrame(img,imgs[at]);
       count.textContent=(at+1)+"/"+imgs.length;
     };
     var step=function(d){
@@ -2766,6 +2766,7 @@ $("dDel").onclick=function(){
     ok:"מחיקה",danger:true
   },function(){
     var g=findSlot(id);if(!g)return;
+    imagesOf(g.slot).forEach(deleteFrame);   /* don't leave the files orphaned */
     state.months[g.key].slots.splice(g.idx,1);save();
     closeEditor();toast("המשבצת נמחקה");
   });
@@ -2796,10 +2797,16 @@ function readImage(file,done){
       ctx.fillStyle="#fff";ctx.fillRect(0,0,w,h);
       ctx.drawImage(img,0,0,w,h);
       if(!Array.isArray(c.images))c.images=[];
+      /* check the limit before uploading, not after */
       if(c.images.length>=maxImages(c.type)){done&&done(false,"full");return}
-      c.images.push(cv.toDataURL("image/jpeg",many?.72:.78));
-      save();fillEditor(c);refreshCard(c);
-      done&&done(true);
+      canvasFrame(cv,many?.72:.78,function(ref){
+        if(!ref){done&&done(false);return}
+        var c2=cur();if(!c2||c2.id!==c.id){done&&done(false);return}
+        if(c2.images.length>=maxImages(c2.type)){done&&done(false,"full");return}
+        c2.images.push(ref);
+        save();fillEditor(c2);refreshCard(c2);
+        done&&done(true);
+      });
     };
     img.onerror=function(){toast("לא הצלחתי לקרוא את הקובץ");done&&done(false)};
     img.src=fr.result;
@@ -2820,9 +2827,15 @@ function slotImage(file,index){
       ctx.fillStyle="#fff";ctx.fillRect(0,0,w,h);
       ctx.drawImage(img,0,0,w,h);
       if(!Array.isArray(c.images))c.images=[];
-      while(c.images.length<index)c.images.push("");
-      c.images[index]=cv.toDataURL("image/jpeg",.72);
-      save();renderSlides(c,typeOf(c.type));refreshCard(c);
+      canvasFrame(cv,.72,function(ref){
+        if(!ref)return;
+        var c2=cur();if(!c2||c2.id!==c.id)return;
+        while(c2.images.length<index)c2.images.push("");
+        var old=c2.images[index];
+        c2.images[index]=ref;
+        if(old&&old!==ref)deleteFrame(old);   /* the frame it replaced */
+        save();renderSlides(c2,typeOf(c2.type));refreshCard(c2);
+      });
     };
     img.onerror=function(){toast("לא הצלחתי לקרוא את הקובץ")};
     img.src=fr.result;
@@ -2864,7 +2877,7 @@ function renderGallery(s){
     imgs.forEach(function(src,i){
       var it=el("div","gcard");
       var th=el("div","gthumb");
-      var im=new Image();im.src=src;im.alt="";im.draggable=false;
+      var im=new Image();im.alt="";im.draggable=false;setFrame(im,src);
       th.appendChild(im);
       var n=el("span","gnum");n.textContent=i+1;
       th.appendChild(n);
@@ -2890,6 +2903,7 @@ function renderGallery(s){
       },i===imgs.length-1));
       var del=mkb("M6 6l12 12M18 6L6 18","הסרת התמונה",function(){
         var c=cur();if(!c)return;
+        deleteFrame(c.images[i]);   /* drop the file, not just the reference */
         c.images.splice(i,1);save();renderGallery(c);refreshCard(c);
       });
       del.className="del";
@@ -2919,7 +2933,7 @@ function renderGallery(s){
     var it=el("div","gitem");
     if(lim>1){var n=el("span","gnum");n.textContent=i+1;it.appendChild(n)}
     var th=el("div","gthumb");
-    var im=new Image();im.src=src;im.alt="";im.draggable=false;
+    var im=new Image();im.alt="";im.draggable=false;setFrame(im,src);
     th.appendChild(im);it.appendChild(th);
 
     var acts=el("div","gacts");
@@ -2949,6 +2963,7 @@ function renderGallery(s){
     del.title="הסרת התמונה";del.setAttribute("aria-label","הסרת תמונה "+(i+1));
     del.onclick=function(){
       var c=cur();if(!c)return;
+      deleteFrame(c.images[i]);   /* drop the file, not just the reference */
       c.images.splice(i,1);save();renderGallery(c);refreshCard(c);
     };
     acts.appendChild(del);
@@ -3192,6 +3207,97 @@ function videoUrl(path){
     return url;
   });
 }
+/* ── frames ──
+   A frame used to be stored inside the plan as a base64 data URL. That made
+   the plan enormous — 98% of every version snapshot was duplicated image
+   bytes, and one board with nine frames took 23MB of history. Frames now live
+   as real files in the media bucket and the plan keeps only "m:<path>".
+   Anything that does not start with "m:" is a legacy inline frame: it still
+   renders, so an old board keeps working until it migrates. */
+var FRAME="m:";
+function isStored(v){return typeof v==="string"&&v.slice(0,2)===FRAME}
+function framePath(v){return v.slice(FRAME.length)}
+function frameUrl(v){
+  if(!v)return Promise.resolve("");
+  if(!isStored(v))return Promise.resolve(v);
+  return videoUrl(framePath(v));      /* same short-lived signed link */
+}
+/* the src arrives asynchronously for a stored frame, so the element is built
+   first and filled in when the link comes back */
+function setFrame(img,v){
+  img.removeAttribute("src");
+  frameUrl(v).then(function(u){if(u)img.src=u},function(){});
+}
+function uploadFrame(blob){
+  if(!signedIn())return Promise.resolve(null);
+  var path=SESS.user_id+"/f"+Date.now()+Math.random().toString(36).slice(2,7)+".jpg";
+  return ensureFreshToken().then(function(){
+    return fetch(SUPA_URL+"/storage/v1/object/media/"+path,{
+      method:"POST",
+      headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SESS.access_token,
+               "Content-Type":"image/jpeg","x-upsert":"true"},
+      body:blob
+    });
+  }).then(function(r){
+    if(!r.ok)return r.text().then(function(t){throw new Error(t||"ההעלאה נכשלה")});
+    return FRAME+path;
+  });
+}
+function deleteFrame(v){
+  if(!signedIn()||!isStored(v))return Promise.resolve();
+  return ensureFreshToken().then(function(){
+    return authFetch("/storage/v1/object/media/"+framePath(v),{method:"DELETE"});
+  }).catch(function(){});
+}
+/* Turn what the canvas holds into a stored frame. With no account to upload
+   under there is nowhere to put a file, so the offline copy keeps the frame
+   inline rather than losing it. */
+function canvasFrame(cv,q,done){
+  if(!signedIn()||!cv.toBlob){done(cv.toDataURL("image/jpeg",q));return}
+  cv.toBlob(function(b){
+    if(!b){done(cv.toDataURL("image/jpeg",q));return}
+    uploadFrame(b).then(
+      function(ref){done(ref||cv.toDataURL("image/jpeg",q))},
+      function(){toast("העלאת התמונה נכשלה — נסי שוב");done(null)});
+  },"image/jpeg",q);
+}
+
+/* Move whatever is still inline into storage, one frame at a time, after the
+   board is already on screen. Deliberately unhurried: a frame that fails just
+   stays inline and gets another chance next load, and nothing is removed until
+   its replacement is safely stored. */
+var migrating=false;
+function migrateFrames(){
+  if(migrating||!signedIn()||!syncReady())return;
+  var todo=[];
+  Object.keys(state.months).forEach(function(k){
+    ((state.months[k]||{}).slots||[]).forEach(function(s){
+      (s.images||[]).forEach(function(v,i){
+        if(v&&!isStored(v))todo.push({slot:s,at:i,was:v});
+      });
+    });
+  });
+  if(!todo.length)return;
+  migrating=true;
+  var moved=0;
+  var next=function(){
+    var job=todo.shift();
+    if(!job){
+      migrating=false;
+      if(moved){save();render();toast("התמונות הועברו לאחסון")}
+      return;
+    }
+    fetch(job.was).then(function(r){return r.blob()})
+      .then(uploadFrame)
+      .then(function(ref){
+        /* only swap if nothing changed underneath us in the meantime */
+        if(ref&&job.slot.images[job.at]===job.was){job.slot.images[job.at]=ref;moved++}
+        setTimeout(next,150);
+      },function(){migrating=false});   /* stop the sweep, try again next load */
+  };
+  next();
+}
+
 function uploadVideo(file){
   if(!signedIn())return Promise.reject(new Error("צריך חשבון כדי לצרף סרטון"));
   if(file.size>100*1024*1024)return Promise.reject(new Error("הסרטון גדול מ-100MB"));
@@ -3552,6 +3658,7 @@ function pullThenSync(){
       pushNow();
     }
     startPolling();
+    setTimeout(migrateFrames,4000);   /* let the board settle first */
   }).catch(function(){
     pulling=false;booting=false;setSync("err");startPolling();
   });
@@ -3903,7 +4010,7 @@ $("syncStop").onclick=function(){
    for hours. A tiny version file fetched with no-store settles who is stale;
    when the board is idle it refreshes itself, and when she is mid-edit it
    waits and offers a button instead of yanking the page away. */
-var BUILD="d4100c71";
+var BUILD="43dd9a67";
 function versionCheck(){
   if(!/^https?:/.test(location.protocol))return;
   fetch("version.json?t="+Date.now(),{cache:"no-store"})
